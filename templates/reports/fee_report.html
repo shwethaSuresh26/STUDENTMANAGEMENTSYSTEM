@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Fees Financial Report{% endblock %}
+{% block page_heading %}Fee Collection Report{% endblock %}
+{% block page_subheading %}Institutional revenue collection and outstanding dues balance report{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR (Hidden in print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <form method="GET" action="{{ url_for('reports.fee_report') }}" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+      <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+        <select name="category" class="form-select" style="width: 170px;" onchange="this.form.submit()">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="status" class="form-select" style="width: 150px;" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          <option value="Paid" {% if selected_status == 'Paid' %}selected{% endif %}>Paid</option>
+          <option value="Partially Paid" {% if selected_status == 'Partially Paid' %}selected{% endif %}>Partially Paid</option>
+          <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+        </select>
+
+        <select name="department_id" class="form-select" style="width: 200px;" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Reports Hub
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PRINTABLE FEE REPORT DOCUMENT -->
+<div class="printable-document card" style="max-width: 1050px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <div class="report-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Finance & Accounts Division &bull; Revenue Collection Register</p>
+    
+    <div style="display: flex; justify-content: space-around; margin-top: 1rem; font-size: 0.9rem; background-color: var(--surface-alt); padding: 0.85rem 1rem; border-radius: var(--radius-sm);">
+      <span>Total Invoiced: <strong>${{ "{:,.2f}".format(total_invoiced) }}</strong></span>
+      <span>Total Collected: <strong style="color: var(--success-text);">${{ "{:,.2f}".format(total_collected) }}</strong></span>
+      <span>Outstanding Dues: <strong style="color: var(--danger-text);">${{ "{:,.2f}".format(total_pending) }}</strong></span>
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th style="width: 40px;">#</th>
+        <th>Student ID</th>
+        <th>Student Name</th>
+        <th>Department</th>
+        <th>Fee Category</th>
+        <th>Invoice Title</th>
+        <th style="text-align: right;">Invoiced</th>
+        <th style="text-align: right;">Paid</th>
+        <th style="text-align: right;">Due</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fees %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><strong style="color: var(--primary);">{{ f.student.student_id }}</strong></td>
+        <td><strong>{{ f.student.full_name }}</strong></td>
+        <td>{{ f.student.department.code }}</td>
+        <td>{{ f.fee_category }}</td>
+        <td>{{ f.title }}</td>
+        <td style="text-align: right;">${{ "{:,.2f}".format(f.total_amount) }}</td>
+        <td style="text-align: right; color: var(--success-text); font-weight: 600;">${{ "{:,.2f}".format(f.paid_amount) }}</td>
+        <td style="text-align: right; color: {% if f.balance_amount > 0 %}var(--danger-text){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+          ${{ "{:,.2f}".format(f.balance_amount) }}
+        </td>
+        <td>
+          <span class="badge {{ f.status.lower().replace(' ', '-') }}">{{ f.status }}</span>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">No fee records found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Internal Auditor</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Account Reconciliation</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Chief Finance Officer</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Official Seal & Signature</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

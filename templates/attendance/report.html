@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Attendance Report{% endblock %}
+{% block page_heading %}Monthly Attendance Analysis{% endblock %}
+{% block page_subheading %}Student attendance aggregated by month and subject{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<form method="GET" action="{{ url_for('attendance.report') }}" class="filter-bar">
+  <div style="min-width: 160px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">MONTH</label>
+    <input type="month" name="month" class="form-control" value="{{ selected_month }}" onchange="this.form.submit()">
+  </div>
+
+  <div style="min-width: 200px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">DEPARTMENT</label>
+    <select name="department_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+      <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 200px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">SUBJECT</label>
+    <select name="subject_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Subjects</option>
+      {% for s in subjects %}
+      <option value="{{ s.id }}" {% if selected_subject == s.id %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; align-self: flex-end;">
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-filter"></i> Apply
+    </button>
+  </div>
+
+  <div style="margin-left: auto; align-self: flex-end;">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="printReport()">
+      <i class="bi bi-printer"></i> Print Summary
+    </button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-calendar2-month"></i> Attendance Sheet: {{ selected_month }}</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Department</th>
+          <th>Total Days</th>
+          <th>Present Days</th>
+          <th>Absent Days</th>
+          <th>Attendance Rate</th>
+          <th>Status Indicator</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in student_summaries %}
+        {% set s = item.student %}
+        <tr>
+          <td>
+            <div class="student-cell">
+              <img src="{{ url_for('static', filename='uploads/avatars/' + s.photo_filename) }}" 
+                   onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+                   class="avatar-img" alt="{{ s.full_name }}">
+              <div class="student-name-sub">
+                <a href="{{ url_for('students.view_profile', id=s.id) }}" style="text-decoration: none; color: inherit;">
+                  <strong>{{ s.full_name }}</strong>
+                </a>
+                <span>{{ s.student_id }}</span>
+              </div>
+            </div>
+          </td>
+          <td>{{ s.department.code }}</td>
+          <td>{{ item.total }}</td>
+          <td style="color: var(--success-text); font-weight: 600;">{{ item.present }}</td>
+          <td style="color: var(--danger-text); font-weight: 600;">{{ item.absent }}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div style="flex: 1; min-width: 70px; background-color: var(--surface-alt); height: 6px; border-radius: 9999px; overflow: hidden;">
+                <div style="background-color: {% if item.percentage >= 75 %}var(--success){% elif item.percentage >= 60 %}var(--warning){% else %}var(--danger){% endif %}; width: {{ item.percentage }}%; height: 100%;"></div>
+              </div>
+              <strong style="font-size: 0.85rem;">{{ item.percentage }}%</strong>
+            </div>
+          </td>
+          <td>
+            {% if item.percentage >= 75 %}
+              <span class="badge present"><i class="bi bi-check"></i> Good</span>
+            {% elif item.percentage >= 60 %}
+              <span class="badge late"><i class="bi bi-dash"></i> Average</span>
+            {% else %}
+              <span class="badge absent"><i class="bi bi-exclamation"></i> Low</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+            No attendance records found for {{ selected_month }}.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

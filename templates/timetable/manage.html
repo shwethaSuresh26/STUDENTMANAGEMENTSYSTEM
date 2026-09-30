@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Timetable Slots{% endblock %}
+{% block page_heading %}Timetable Configuration{% endblock %}
+{% block page_subheading %}Add, modify, or remove class schedule slots{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
+  
+  <!-- ADD / CONFIGURE SLOT FORM -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="bi bi-calendar-plus"></i> Configure Schedule Slot</h3>
+    </div>
+    <div class="card-body">
+      <form action="{{ url_for('timetable.manage') }}" method="POST">
+        
+        <div class="form-group">
+          <label for="department_id">Department <span style="color: var(--danger);">*</span></label>
+          <select id="department_id" name="department_id" class="form-select" required>
+            {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="year">Year</label>
+            <select id="year" name="year" class="form-select" required>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="semester">Semester</label>
+            <select id="semester" name="semester" class="form-select" required>
+              {% for i in range(1, 9) %}
+              <option value="{{ i }}">Semester {{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="day_of_week">Day of Week <span style="color: var(--danger);">*</span></label>
+            <select id="day_of_week" name="day_of_week" class="form-select" required>
+              {% for day in days_of_week %}
+              <option value="{{ day }}">{{ day }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="period_number">Period <span style="color: var(--danger);">*</span></label>
+            <select id="period_number" name="period_number" class="form-select" required>
+              {% for p_num, p_time in period_hours %}
+              <option value="{{ p_num }}">Period {{ p_num }} ({{ p_time }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="subject_id">Subject <span style="color: var(--danger);">*</span></label>
+          <select id="subject_id" name="subject_id" class="form-select" required>
+            {% for s in subjects %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.code }} &bull; {{ s.teacher_name }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="teacher_name">Teacher / Instructor (Optional override)</label>
+          <input type="text" id="teacher_name" name="teacher_name" class="form-control" placeholder="Leave blank to use subject's assigned faculty">
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="room_number">Classroom / Lab</label>
+            <input type="text" id="room_number" name="room_number" class="form-control" value="Room 101" required>
+          </div>
+
+          <div class="form-group">
+            <label for="start_time">Time Slot</label>
+            <input type="text" id="start_time" name="start_time" class="form-control" value="09:00 AM - 10:00 AM">
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <a href="{{ url_for('timetable.index') }}" class="btn btn-secondary">Back to Matrix</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2"></i> Save Timetable Slot
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- EXISTING SLOTS LIST -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="bi bi-list-columns"></i> Allocated Slots ({{ all_slots|length }})</h3>
+      <a href="{{ url_for('timetable.index') }}" class="btn btn-secondary btn-sm"><i class="bi bi-grid-3x3"></i> Matrix View</a>
+    </div>
+    <div class="table-responsive" style="max-height: 580px; overflow-y: auto;">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Day & Period</th>
+            <th>Dept & Year</th>
+            <th>Subject & Teacher</th>
+            <th>Room</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for slot in all_slots %}
+          <tr>
+            <td>
+              <strong>{{ slot.day_of_week }}</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Period {{ slot.period_number }}</div>
+            </td>
+            <td>
+              <div>{{ slot.department.code }}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Year {{ slot.year }} (Sem {{ slot.semester }})</div>
+            </td>
+            <td>
+              <strong>{{ slot.subject.name }}</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">{{ slot.teacher_name }}</div>
+            </td>
+            <td>{{ slot.room_number }}</td>
+            <td style="text-align: right;">
+              <form id="del-slot-{{ slot.id }}" action="{{ url_for('timetable.delete', id=slot.id) }}" method="POST" style="display: inline;">
+                <button type="button" class="btn btn-danger btn-icon" title="Delete Slot" onclick="confirmDelete('del-slot-{{ slot.id }}', 'this timetable slot')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No timetable slots configured yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

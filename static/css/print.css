@@ -1,0 +1,111 @@
+/* ===================================================================
+   PRINT STYLESHEET FOR RECEIPTS, MARKSHEETS & REPORTS
+   =================================================================== */
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  .sidebar,
+  .topbar,
+  .mobile-toggle-btn,
+  .btn,
+  .filter-bar,
+  .tabs-nav,
+  .flash-container,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  .main-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+  }
+
+  .content-body {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .card-header, .card-body {
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  /* Printable Document Container */
+  .printable-document {
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .receipt-header, .marksheet-header, .report-header {
+    text-align: center;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+  }
+
+  .receipt-header h1, .marksheet-header h1, .report-header h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .receipt-header p, .marksheet-header p, .report-header p {
+    font-size: 10pt;
+    color: #333333;
+  }
+
+  .custom-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 15px 0 !important;
+  }
+
+  .custom-table th, .custom-table td {
+    border: 1px solid #333333 !important;
+    padding: 8px 10px !important;
+    font-size: 10pt !important;
+    background-color: transparent !important;
+    color: #000000 !important;
+  }
+
+  .custom-table th {
+    background-color: #f2f2f2 !important;
+    font-weight: bold !important;
+  }
+
+  .signature-block {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 50px !important;
+    padding-top: 20px !important;
+  }
+
+  .sig-line {
+    border-top: 1px solid #000000;
+    width: 200px;
+    text-align: center;
+    font-size: 9pt;
+    padding-top: 5px;
+  }
+
+  @page {
+    margin: 15mm;
+    size: auto;
+  }
+}

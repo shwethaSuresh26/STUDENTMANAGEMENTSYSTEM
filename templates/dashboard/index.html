@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Overview{% endblock %}
+{% block page_heading %}Admin Dashboard{% endblock %}
+{% block page_subheading %}Comprehensive overview of college operations, student performance, and finances{% endblock %}
+
+{% block content %}
+
+<!-- KPI METRIC CARDS -->
+<div class="kpi-grid">
+  
+  <div class="kpi-card blue">
+    <div class="kpi-info">
+      <h4>Total Enrolled Students</h4>
+      <div class="kpi-value">{{ total_students }}</div>
+      <div class="kpi-subtext"><i class="bi bi-building"></i> {{ total_departments }} Departments</div>
+    </div>
+    <div class="kpi-icon blue">
+      <i class="bi bi-people-fill"></i>
+    </div>
+  </div>
+
+  <div class="kpi-card purple">
+    <div class="kpi-info">
+      <h4>Faculty & Subjects</h4>
+      <div class="kpi-value">{{ total_teachers }}</div>
+      <div class="kpi-subtext"><i class="bi bi-book"></i> {{ total_subjects }} Active Courses</div>
+    </div>
+    <div class="kpi-icon purple">
+      <i class="bi bi-person-video3"></i>
+    </div>
+  </div>
+
+  <div class="kpi-card green">
+    <div class="kpi-info">
+      <h4>Today's Attendance</h4>
+      <div class="kpi-value">{{ attendance_rate }}%</div>
+      <div class="kpi-subtext">
+        <span style="color: var(--success-text); font-weight: 600;">{{ today_present }} Present</span> &bull; 
+        <span style="color: var(--danger-text); font-weight: 600;">{{ today_absent }} Absent</span>
+      </div>
+    </div>
+    <div class="kpi-icon green">
+      <i class="bi bi-calendar-check-fill"></i>
+    </div>
+  </div>
+
+  <div class="kpi-card amber">
+    <div class="kpi-info">
+      <h4>Fee Collections</h4>
+      <div class="kpi-value">${{ "{:,.0f}".format(total_fees_collected) }}</div>
+      <div class="kpi-subtext">
+        <span style="color: var(--warning-text); font-weight: 600;">${{ "{:,.0f}".format(total_fees_pending) }} Pending</span>
+      </div>
+    </div>
+    <div class="kpi-icon amber">
+      <i class="bi bi-cash-stack"></i>
+    </div>
+  </div>
+
+</div>
+
+<!-- QUICK ACTION BUTTONS -->
+<div class="card" style="margin-bottom: 2rem; background: linear-gradient(to right, #ffffff, #f8fafc);">
+  <div class="card-body" style="padding: 1.25rem 1.5rem;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-main);"><i class="bi bi-lightning-charge-fill text-warning"></i> Quick Operations:</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.65rem;">
+        <a href="{{ url_for('students.add') }}" class="btn btn-primary btn-sm">
+          <i class="bi bi-person-plus-fill"></i> Add Student
+        </a>
+        <a href="{{ url_for('attendance.mark') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-calendar-check"></i> Mark Attendance
+        </a>
+        <a href="{{ url_for('marks.add') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-pencil-square"></i> Enter Marks
+        </a>
+        <a href="{{ url_for('fees.add') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-receipt"></i> Create Fee Invoice
+        </a>
+        <a href="{{ url_for('timetable.index') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-calendar3"></i> View Timetable
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if low_attendance_count > 0 %}
+<!-- LOW ATTENDANCE ALERT BANNER -->
+<div class="alert alert-warning" style="margin-bottom: 2rem;">
+  <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.35rem;"></i>
+    <div>
+      <strong>Low Attendance Warning:</strong> {{ low_attendance_count }} active student(s) currently have an attendance rate below 75%.
+    </div>
+  </div>
+  <a href="{{ url_for('attendance.low_attendance') }}" class="btn btn-sm btn-secondary" style="background: white; border-color: #fde68a;">
+    View Defaulters <i class="bi bi-arrow-right"></i>
+  </a>
+</div>
+{% endif %}
+
+<!-- MAIN DASHBOARD CONTENT GRID -->
+<div class="dashboard-grid-2">
+  
+  <!-- LEFT COLUMN: Department Stats & Recent Students -->
+  <div>
+    
+    <!-- Department Distribution Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-bar-chart-steps"></i> Department Student Distribution</h3>
+        <a href="{{ url_for('students.index') }}" class="btn btn-secondary btn-sm">View All Students</a>
+      </div>
+      <div class="card-body">
+        <div id="deptBarsContainer">
+          <!-- Rendered via charts.js / JS -->
+          {% for d in dept_stats %}
+          <div style="margin-bottom: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.25rem;">
+              <span>{{ d.name }} ({{ d.code }})</span>
+              <span style="color: var(--text-muted);">{{ d.count }} Students</span>
+            </div>
+            <div style="background-color: var(--surface-alt); height: 8px; border-radius: 9999px; overflow: hidden;">
+              <div style="background: linear-gradient(90deg, #2563eb, #3b82f6); width: {% if total_students > 0 %}{{ (d.count / total_students * 100)|round|int }}%{% else %}0%{% endif %}; height: 100%; border-radius: 9999px;"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recently Enrolled Students Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-person-check-fill"></i> Recently Enrolled Students</h3>
+        <a href="{{ url_for('students.add') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus"></i> New Student</a>
+      </div>
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Department</th>
+              <th>Year</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in recent_students %}
+            <tr>
+              <td>
+                <div class="student-cell">
+                  <img src="{{ url_for('static', filename='uploads/avatars/' + s.photo_filename) }}" 
+                       onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+                       class="avatar-img" alt="{{ s.full_name }}">
+                  <div class="student-name-sub">
+                    <strong>{{ s.full_name }}</strong>
+                    <span>{{ s.student_id }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>{{ s.department.code }}</td>
+              <td>Year {{ s.year }}</td>
+              <td>
+                <span class="badge {{ s.status.lower() }}">{{ s.status }}</span>
+              </td>
+              <td>
+                <a href="{{ url_for('students.view_profile', id=s.id) }}" class="btn btn-secondary btn-icon" title="View Profile">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No students registered yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN: Attendance Donut, Today's Timetable & Activity Stream -->
+  <div>
+    
+    <!-- Attendance Overview Donut -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-pie-chart-fill"></i> Overall Attendance</h3>
+        <a href="{{ url_for('attendance.report') }}" class="btn btn-secondary btn-sm">Report</a>
+      </div>
+      <div class="card-body" style="text-align: center;">
+        <canvas id="attendanceChartCanvas" width="180" height="180" style="margin: 0 auto; display: block;"></canvas>
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; font-size: 0.78rem;">
+          <span style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></span> Present
+          </span>
+          <span style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%;"></span> Absent
+          </span>
+          <span style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="width: 10px; height: 10px; background: #94a3b8; border-radius: 50%;"></span> Excused
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's Schedule -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-clock-history"></i> Today's Schedule ({{ day_name }})</h3>
+        <a href="{{ url_for('timetable.index') }}" class="btn btn-secondary btn-sm">Full Matrix</a>
+      </div>
+      <div class="card-body" style="padding: 0.75rem 1.25rem;">
+        {% if today_timetable %}
+          {% for slot in today_timetable %}
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0; border-bottom: 1px solid var(--border-light);">
+            <div>
+              <strong style="font-size: 0.85rem; color: var(--primary);">{{ slot.subject.name }}</strong>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">
+                <i class="bi bi-person"></i> {{ slot.teacher_name }} &bull; <i class="bi bi-geo-alt"></i> {{ slot.room_number }}
+              </div>
+            </div>
+            <span class="badge" style="background-color: var(--surface-alt); color: var(--text-main); font-size: 0.75rem;">
+              {{ slot.start_time }}
+            </span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 1.5rem 0;">
+            No scheduled classes for {{ day_name }}.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Activity Timeline -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-activity"></i> Recent Activity</h3>
+      </div>
+      <div class="card-body" style="padding: 0.85rem 1.25rem;">
+        {% for act in recent_activities %}
+        <div style="display: flex; gap: 0.85rem; margin-bottom: 1rem;">
+          <div style="width: 32px; height: 32px; border-radius: var(--radius-full); background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0;">
+            <i class="bi {{ act.icon_class }}"></i>
+          </div>
+          <div style="flex: 1;">
+            <p style="font-size: 0.82rem; color: var(--text-main); line-height: 1.3;">{{ act.description }}</p>
+            <span style="font-size: 0.7rem; color: var(--text-light);">{{ act.timestamp.strftime('%d-%b %I:%M %p') }}</span>
+          </div>
+        </div>
+        {% else %}
+        <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">No recent activity logged.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

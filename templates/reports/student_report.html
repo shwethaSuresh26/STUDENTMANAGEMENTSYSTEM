@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Student Master Report{% endblock %}
+{% block page_heading %}Student Enrollment Report{% endblock %}
+{% block page_subheading %}Comprehensive institutional student demographic register{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR (Hidden in print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <form method="GET" action="{{ url_for('reports.student_report') }}" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+      <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+        <select name="department_id" class="form-select" style="width: 200px;" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+          {% endfor %}
+        </select>
+
+        <select name="year" class="form-select" style="width: 140px;" onchange="this.form.submit()">
+          <option value="">All Years</option>
+          <option value="1" {% if selected_year == 1 %}selected{% endif %}>1st Year</option>
+          <option value="2" {% if selected_year == 2 %}selected{% endif %}>2nd Year</option>
+          <option value="3" {% if selected_year == 3 %}selected{% endif %}>3rd Year</option>
+          <option value="4" {% if selected_year == 4 %}selected{% endif %}>4th Year</option>
+        </select>
+
+        <select name="gender" class="form-select" style="width: 140px;" onchange="this.form.submit()">
+          <option value="">All Genders</option>
+          <option value="Male" {% if selected_gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if selected_gender == 'Female' %}selected{% endif %}>Female</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Reports Hub
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PRINTABLE REPORT DOCUMENT -->
+<div class="printable-document card" style="max-width: 1100px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <div class="report-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Office of the Registrar &bull; Student Enrollment Master Register</p>
+    <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+      <span>Generated Date: <strong>{{ generated_date }}</strong></span>
+      <span>Total Records: <strong>{{ students|length }} Students</strong></span>
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th style="width: 40px;">#</th>
+        <th>Student ID</th>
+        <th>Full Name</th>
+        <th>Gender</th>
+        <th>Department & Course</th>
+        <th>Year / Sem</th>
+        <th>Contact Phone</th>
+        <th>Parent / Contact</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><strong style="color: var(--primary);">{{ s.student_id }}</strong></td>
+        <td><strong>{{ s.full_name }}</strong></td>
+        <td>{{ s.gender }}</td>
+        <td>{{ s.department.code }} &bull; {{ s.course }}</td>
+        <td>Year {{ s.year }} (Sem {{ s.semester }})</td>
+        <td>{{ s.phone }}</td>
+        <td>
+          <div>{{ s.parent_name }}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">{{ s.parent_phone }}</div>
+        </td>
+        <td>
+          <span class="badge {{ s.status.lower() }}">{{ s.status }}</span>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No students found for this report filter.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Registrar Assistant</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Verified By</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Dean of Academic Affairs</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Official Seal & Signature</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

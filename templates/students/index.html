@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Student Management{% endblock %}
+{% block page_heading %}Student Directory{% endblock %}
+{% block page_subheading %}Search, filter, and manage all registered student profiles{% endblock %}
+
+{% block content %}
+
+<!-- SEARCH & FILTER BAR -->
+<form method="GET" action="{{ url_for('students.index') }}" class="filter-bar">
+  <div class="search-input-group">
+    <i class="bi bi-search"></i>
+    <input type="text" name="search" class="form-control" placeholder="Search by name, ID, email, or phone..." value="{{ search }}">
+  </div>
+
+  <div style="min-width: 160px;">
+    <select name="department_id" class="form-select">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+      <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 120px;">
+    <select name="year" class="form-select">
+      <option value="">All Years</option>
+      <option value="1" {% if selected_year == 1 %}selected{% endif %}>1st Year</option>
+      <option value="2" {% if selected_year == 2 %}selected{% endif %}>2nd Year</option>
+      <option value="3" {% if selected_year == 3 %}selected{% endif %}>3rd Year</option>
+      <option value="4" {% if selected_year == 4 %}selected{% endif %}>4th Year</option>
+    </select>
+  </div>
+
+  <div style="min-width: 120px;">
+    <select name="gender" class="form-select">
+      <option value="">All Genders</option>
+      <option value="Male" {% if selected_gender == 'Male' %}selected{% endif %}>Male</option>
+      <option value="Female" {% if selected_gender == 'Female' %}selected{% endif %}>Female</option>
+      <option value="Other" {% if selected_gender == 'Other' %}selected{% endif %}>Other</option>
+    </select>
+  </div>
+
+  <div style="min-width: 120px;">
+    <select name="status" class="form-select">
+      <option value="">All Status</option>
+      <option value="Active" {% if selected_status == 'Active' %}selected{% endif %}>Active</option>
+      <option value="Inactive" {% if selected_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+      <option value="Graduated" {% if selected_status == 'Graduated' %}selected{% endif %}>Graduated</option>
+      <option value="Suspended" {% if selected_status == 'Suspended' %}selected{% endif %}>Suspended</option>
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-funnel-fill"></i> Filter
+    </button>
+    <a href="{{ url_for('students.index') }}" class="btn btn-secondary btn-sm" title="Reset Filters">
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </a>
+  </div>
+
+  <div style="margin-left: auto;">
+    <a href="{{ url_for('students.add') }}" class="btn btn-success">
+      <i class="bi bi-person-plus-fill"></i> Add New Student
+    </a>
+  </div>
+</form>
+
+<!-- STUDENTS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-people"></i> Registered Students ({{ students|length }})</h3>
+    <a href="{{ url_for('reports.student_report') }}" class="btn btn-secondary btn-sm">
+      <i class="bi bi-printer"></i> Print Directory
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Contact & Email</th>
+          <th>Department & Course</th>
+          <th>Year & Sem</th>
+          <th>Attendance</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        {% set att = s.attendance_stats %}
+        <tr>
+          <td>
+            <div class="student-cell">
+              <img src="{{ url_for('static', filename='uploads/avatars/' + s.photo_filename) }}" 
+                   onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+                   class="avatar-img" alt="{{ s.full_name }}">
+              <div class="student-name-sub">
+                <a href="{{ url_for('students.view_profile', id=s.id) }}" style="text-decoration: none; color: inherit;">
+                  <strong>{{ s.full_name }}</strong>
+                </a>
+                <span>ID: {{ s.student_id }} &bull; {{ s.gender }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-size: 0.82rem;">
+              <div><i class="bi bi-envelope text-muted"></i> {{ s.email }}</div>
+              <div><i class="bi bi-telephone text-muted"></i> {{ s.phone }}</div>
+            </div>
+          </td>
+          <td>
+            <strong style="color: var(--primary);">{{ s.department.code }}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ s.course }}</div>
+          </td>
+          <td>
+            <div>Year {{ s.year }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Sem {{ s.semester }}</div>
+          </td>
+          <td>
+            {% if att.total > 0 %}
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span class="badge {% if att.percentage >= 75 %}present{% elif att.percentage >= 60 %}late{% else %}absent{% endif %}">
+                  {{ att.percentage }}%
+                </span>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">({{ att.present }}/{{ att.total }})</span>
+              </div>
+            {% else %}
+              <span style="color: var(--text-light); font-size: 0.78rem;">No records</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge {{ s.status.lower() }}">{{ s.status }}</span>
+          </td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 0.35rem;">
+              <a href="{{ url_for('students.view_profile', id=s.id) }}" class="btn btn-secondary btn-icon" title="View 360° Profile">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{{ url_for('marks.marksheet', student_id=s.id) }}" class="btn btn-secondary btn-icon" title="Report Card / Marksheet">
+                <i class="bi bi-award"></i>
+              </a>
+              <a href="{{ url_for('students.edit', id=s.id) }}" class="btn btn-secondary btn-icon" title="Edit Student">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <form id="delete-student-form-{{ s.id }}" action="{{ url_for('students.delete', id=s.id) }}" method="POST" style="display: inline;">
+                <button type="button" class="btn btn-danger btn-icon" title="Delete Student" onclick="confirmDelete('delete-student-form-{{ s.id }}', 'student {{ s.full_name }} ({{ s.student_id }})')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+            <i class="bi bi-search" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+            No students found matching the selected filter criteria.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.full_name }} - Profile{% endblock %}
+{% block page_heading %}Student 360° Profile{% endblock %}
+{% block page_subheading %}Comprehensive dossier of academic records, attendance history, and fee transactions{% endblock %}
+
+{% block content %}
+<div class="tab-container">
+
+  <!-- PROFILE HEADER BANNER -->
+  <div class="profile-header-card">
+    <img src="{{ url_for('static', filename='uploads/avatars/' + student.photo_filename) }}" 
+         onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+         class="profile-avatar-large" alt="{{ student.full_name }}">
+    
+    <div class="profile-info" style="flex: 1;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <h2>{{ student.full_name }}</h2>
+        <span class="badge {{ student.status.lower() }}" style="background: rgba(255,255,255,0.2); color: #ffffff; border-color: rgba(255,255,255,0.4);">
+          {{ student.status }}
+        </span>
+      </div>
+      
+      <div class="profile-meta">
+        <span><i class="bi bi-person-badge"></i> ID: <strong>{{ student.student_id }}</strong></span>
+        <span><i class="bi bi-building"></i> {{ student.department.name }} ({{ student.department.code }})</span>
+        <span><i class="bi bi-mortarboard"></i> {{ student.course }} &bull; Year {{ student.year }} (Sem {{ student.semester }})</span>
+        <span><i class="bi bi-calendar-event"></i> Admitted: {{ student.admission_date.strftime('%d-%b-%Y') if student.admission_date else 'N/A' }}</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+      <a href="{{ url_for('marks.marksheet', student_id=student.id) }}" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.3);">
+        <i class="bi bi-award"></i> Mark Sheet
+      </a>
+      <a href="{{ url_for('students.edit', id=student.id) }}" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.3);">
+        <i class="bi bi-pencil-square"></i> Edit
+      </a>
+      <form id="del-stu-profile" action="{{ url_for('students.delete', id=student.id) }}" method="POST" style="display: inline;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete('del-stu-profile', 'student {{ student.full_name }}')">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="tabs-nav">
+    <button class="tab-btn active" data-tab="tab-overview">
+      <i class="bi bi-person-lines-fill"></i> Overview & Info
+    </button>
+    <button class="tab-btn" data-tab="tab-attendance">
+      <i class="bi bi-calendar-check"></i> Attendance ({% if student.attendance_stats.total > 0 %}{{ student.attendance_stats.percentage }}%{% else %}0%{% endif %})
+    </button>
+    <button class="tab-btn" data-tab="tab-marks">
+      <i class="bi bi-award"></i> Marks & Grades ({{ marks_records|length }})
+    </button>
+    <button class="tab-btn" data-tab="tab-fees">
+      <i class="bi bi-cash-stack"></i> Fee Records & Ledger
+    </button>
+  </div>
+
+  <!-- TAB 1: OVERVIEW & PERSONAL INFO -->
+  <div class="tab-content-panel active" id="tab-overview">
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+      
+      <!-- Academic & Personal Details -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="bi bi-info-circle"></i> Student Information</h3>
+        </div>
+        <div class="card-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Full Name</span>
+              <p style="font-weight: 600; font-size: 0.95rem;">{{ student.full_name }}</p>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Student ID</span>
+              <p style="font-weight: 600; font-size: 0.95rem; color: var(--primary);">{{ student.student_id }}</p>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Date of Birth</span>
+              <p style="font-weight: 600; font-size: 0.95rem;">{{ student.dob.strftime('%d-%b-%Y') if student.dob else 'N/A' }}</p>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Gender</span>
+              <p style="font-weight: 600; font-size: 0.95rem;">{{ student.gender }}</p>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Email Address</span>
+              <p style="font-weight: 600; font-size: 0.95rem;">{{ student.email }}</p>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Phone Number</span>
+              <p style="font-weight: 600; font-size: 0.95rem;">{{ student.phone }}</p>
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Permanent Address</span>
+              <p style="font-weight: 500; font-size: 0.9rem; margin-top: 0.25rem;">{{ student.address }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parent / Guardian Information -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="bi bi-people"></i> Parent / Guardian</h3>
+          </div>
+          <div class="card-body">
+            <div style="margin-bottom: 1rem;">
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Guardian Name</span>
+              <p style="font-weight: 600; font-size: 0.95rem;">{{ student.parent_name }}</p>
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Relationship</span>
+              <p style="font-weight: 600; font-size: 0.95rem;">{{ student.parent_relation }}</p>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Emergency Contact</span>
+              <p style="font-weight: 600; font-size: 0.95rem; color: var(--primary);">
+                <i class="bi bi-telephone-fill"></i> {{ student.parent_phone }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Summary Stats Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="bi bi-speedometer2"></i> Academic Summary</h3>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Attendance Rate:</span>
+              <strong style="color: {% if student.attendance_stats.percentage >= 75 %}var(--success-text){% else %}var(--danger-text){% endif %};">
+                {{ student.attendance_stats.percentage }}%
+              </strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Avg. Marks Pct:</span>
+              <strong>{{ avg_percentage }}%</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Fee Pending Dues:</span>
+              <strong style="color: {% if student.fee_stats.pending > 0 %}var(--warning-text){% else %}var(--success-text){% endif %};">
+                ${{ "{:,.2f}".format(student.fee_stats.pending) }}
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB 2: ATTENDANCE HISTORY -->
+  <div class="tab-content-panel" id="tab-attendance">
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-calendar-check"></i> Attendance Record History</h3>
+        <a href="{{ url_for('attendance.mark') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus"></i> Mark Attendance</a>
+      </div>
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Remarks</th>
+              <th>Recorded By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for att in attendance_records %}
+            <tr>
+              <td><strong>{{ att.date.strftime('%d-%b-%Y') }}</strong></td>
+              <td>{{ att.subject.name }} ({{ att.subject.code }})</td>
+              <td>
+                <span class="badge {{ att.status.lower() }}">{{ att.status }}</span>
+              </td>
+              <td>{{ att.remarks or '-' }}</td>
+              <td><span style="font-size: 0.75rem; color: var(--text-muted);">{{ att.recorded_by }}</span></td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No attendance records found for this student.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: MARKS & EXAM RESULTS -->
+  <div class="tab-content-panel" id="tab-marks">
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-award"></i> Academic Exam Results</h3>
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="{{ url_for('marks.add') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus"></i> Enter Marks</a>
+          <a href="{{ url_for('marks.marksheet', student_id=student.id) }}" class="btn btn-secondary btn-sm"><i class="bi bi-printer"></i> View Official Marksheet</a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Exam Name</th>
+              <th>Semester</th>
+              <th>Subject</th>
+              <th>Max Marks</th>
+              <th>Obtained</th>
+              <th>Percentage</th>
+              <th>Grade</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in marks_records %}
+            <tr>
+              <td><strong>{{ m.exam_name }}</strong></td>
+              <td>Semester {{ m.semester }}</td>
+              <td>{{ m.subject.name }}</td>
+              <td>{{ m.max_marks|int }}</td>
+              <td><strong>{{ m.marks_obtained }}</strong></td>
+              <td>{{ m.percentage }}%</td>
+              <td>
+                <span class="badge grade-{{ m.grade[0].lower() }}">{{ m.grade }}</span>
+              </td>
+              <td>
+                <span class="badge {{ m.status.lower() }}">{{ m.status }}</span>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No exam marks recorded yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: FEES & PAYMENTS -->
+  <div class="tab-content-panel" id="tab-fees">
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-credit-card"></i> Fee Invoices & Payment Ledger</h3>
+        <a href="{{ url_for('fees.add') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus"></i> Create Fee Invoice</a>
+      </div>
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Fee Title & Category</th>
+              <th>Total Amount</th>
+              <th>Paid Amount</th>
+              <th>Pending Due</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in fee_records %}
+            <tr>
+              <td>
+                <strong>{{ f.title }}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ f.fee_category }}</div>
+              </td>
+              <td><strong>${{ "{:,.2f}".format(f.total_amount) }}</strong></td>
+              <td style="color: var(--success-text); font-weight: 600;">${{ "{:,.2f}".format(f.paid_amount) }}</td>
+              <td style="color: {% if f.balance_amount > 0 %}var(--danger-text){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+                ${{ "{:,.2f}".format(f.balance_amount) }}
+              </td>
+              <td>{{ f.due_date.strftime('%d-%b-%Y') }}</td>
+              <td>
+                <span class="badge {{ f.status.lower().replace(' ', '-') }}">{{ f.status }}</span>
+              </td>
+              <td>
+                {% if f.payments %}
+                <a href="{{ url_for('fees.receipt', payment_id=f.payments[0].id) }}" class="btn btn-secondary btn-sm" title="Print Latest Receipt">
+                  <i class="bi bi-receipt"></i> Receipt
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No fee records recorded for this student.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

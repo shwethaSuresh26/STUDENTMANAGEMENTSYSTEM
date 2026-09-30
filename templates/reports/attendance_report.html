@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Analytics Report{% endblock %}
+{% block page_heading %}Attendance Report{% endblock %}
+{% block page_subheading %}Official classroom attendance summary and analytics report{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR (Hidden in print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <form method="GET" action="{{ url_for('reports.attendance_report') }}" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+      <div style="display: flex; gap: 0.85rem; flex-wrap: wrap; align-items: center;">
+        <select name="department_id" class="form-select" style="width: 200px;" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+          {% endfor %}
+        </select>
+
+        <div style="display: flex; align-items: center; gap: 0.35rem;">
+          <span style="font-size: 0.82rem; color: var(--text-muted);">From:</span>
+          <input type="date" name="start_date" class="form-control" style="width: 150px;" value="{{ start_date }}">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.35rem;">
+          <span style="font-size: 0.82rem; color: var(--text-muted);">To:</span>
+          <input type="date" name="end_date" class="form-control" style="width: 150px;" value="{{ end_date }}">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Reports Hub
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PRINTABLE ATTENDANCE REPORT DOCUMENT -->
+<div class="printable-document card" style="max-width: 1000px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <div class="report-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Office of Academic Affairs &bull; Attendance Analytics Statement</p>
+    <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+      <span>Report Date: <strong>{{ generated_date }}</strong></span>
+      <span>Total Evaluated: <strong>{{ report_data|length }} Students</strong></span>
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th style="width: 40px;">#</th>
+        <th>Student ID</th>
+        <th>Student Name</th>
+        <th>Department</th>
+        <th>Total Classes</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Attendance %</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in report_data %}
+      {% set s = item.student %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><strong style="color: var(--primary);">{{ s.student_id }}</strong></td>
+        <td><strong>{{ s.full_name }}</strong></td>
+        <td>{{ s.department.code }} &bull; Year {{ s.year }}</td>
+        <td>{{ item.total }}</td>
+        <td style="color: var(--success-text); font-weight: 600;">{{ item.present }}</td>
+        <td style="color: var(--danger-text); font-weight: 600;">{{ item.absent }}</td>
+        <td>
+          <strong style="color: {% if item.percentage >= 75 %}var(--success-text){% else %}var(--danger-text){% endif %};">
+            {{ item.percentage }}%
+          </strong>
+        </td>
+        <td>
+          {% if item.percentage >= 75 %}
+            <span class="badge present">Eligible</span>
+          {% else %}
+            <span class="badge absent">Defaulter (&lt;75%)</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No attendance data found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Faculty In-Charge</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Prepared By</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Head of Department</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Verified & Approved</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

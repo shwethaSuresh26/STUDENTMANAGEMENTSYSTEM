@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Fees Management{% endblock %}
+{% block page_heading %}Fee Invoices & Payments{% endblock %}
+{% block page_subheading %}Track tuition, hostel, and exam fees, collect payments, and issue official receipts{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<form method="GET" action="{{ url_for('fees.index') }}" class="filter-bar">
+  <div class="search-input-group">
+    <i class="bi bi-search"></i>
+    <input type="text" name="search" class="form-control" placeholder="Search student or fee title..." value="{{ search }}">
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="category" class="form-select">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+      <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 150px;">
+    <select name="status" class="form-select">
+      <option value="">All Statuses</option>
+      <option value="Paid" {% if selected_status == 'Paid' %}selected{% endif %}>Paid</option>
+      <option value="Partially Paid" {% if selected_status == 'Partially Paid' %}selected{% endif %}>Partially Paid</option>
+      <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+    </select>
+  </div>
+
+  <div style="min-width: 180px;">
+    <select name="department_id" class="form-select">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+      <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-funnel-fill"></i> Filter
+    </button>
+    <a href="{{ url_for('fees.index') }}" class="btn btn-secondary btn-sm" title="Reset">
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </a>
+  </div>
+
+  <div style="margin-left: auto;">
+    <a href="{{ url_for('fees.add') }}" class="btn btn-success">
+      <i class="bi bi-receipt"></i> Create Fee Invoice
+    </a>
+  </div>
+</form>
+
+<!-- FINANCIAL KPI SUMMARY -->
+<div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+  <div class="kpi-card blue" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Total Invoiced</h4>
+      <div class="kpi-value" style="font-size: 1.6rem;">${{ "{:,.2f}".format(total_invoiced) }}</div>
+    </div>
+    <div class="kpi-icon blue"><i class="bi bi-receipt-cutoff"></i></div>
+  </div>
+
+  <div class="kpi-card green" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Total Collected</h4>
+      <div class="kpi-value" style="font-size: 1.6rem; color: var(--success-text);">${{ "{:,.2f}".format(total_collected) }}</div>
+    </div>
+    <div class="kpi-icon green"><i class="bi bi-check-circle-fill"></i></div>
+  </div>
+
+  <div class="kpi-card rose" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Pending Balance</h4>
+      <div class="kpi-value" style="font-size: 1.6rem; color: var(--danger-text);">${{ "{:,.2f}".format(total_pending) }}</div>
+    </div>
+    <div class="kpi-icon rose"><i class="bi bi-clock-fill"></i></div>
+  </div>
+</div>
+
+<!-- FEES LIST TABLE -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-cash-stack"></i> Fee Records & Statements</h3>
+    <a href="{{ url_for('reports.fee_report') }}" class="btn btn-secondary btn-sm">
+      <i class="bi bi-printer"></i> Financial Report
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Fee Category & Title</th>
+          <th>Total Amount</th>
+          <th>Paid Amount</th>
+          <th>Balance Due</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in records %}
+        <tr>
+          <td>
+            <div class="student-cell">
+              <img src="{{ url_for('static', filename='uploads/avatars/' + f.student.photo_filename) }}" 
+                   onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+                   class="avatar-img" alt="{{ f.student.full_name }}">
+              <div class="student-name-sub">
+                <a href="{{ url_for('students.view_profile', id=f.student.id) }}" style="text-decoration: none; color: inherit;">
+                  <strong>{{ f.student.full_name }}</strong>
+                </a>
+                <span>{{ f.student.student_id }} &bull; {{ f.student.department.code }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <strong>{{ f.title }}</strong>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">{{ f.fee_category }}</div>
+          </td>
+          <td><strong>${{ "{:,.2f}".format(f.total_amount) }}</strong></td>
+          <td style="color: var(--success-text); font-weight: 700;">${{ "{:,.2f}".format(f.paid_amount) }}</td>
+          <td style="color: {% if f.balance_amount > 0 %}var(--danger-text){% else %}var(--text-muted){% endif %}; font-weight: 700;">
+            ${{ "{:,.2f}".format(f.balance_amount) }}
+          </td>
+          <td>{{ f.due_date.strftime('%d-%b-%Y') }}</td>
+          <td>
+            <span class="badge {{ f.status.lower().replace(' ', '-') }}">{{ f.status }}</span>
+          </td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 0.35rem;">
+              
+              {% if f.balance_amount > 0 %}
+              <button type="button" class="btn btn-success btn-sm" onclick="openPaymentModal({{ f.id }}, '{{ f.student.full_name }}', '{{ f.title }}', {{ f.balance_amount }})">
+                <i class="bi bi-credit-card"></i> Pay
+              </button>
+              {% endif %}
+
+              {% if f.payments %}
+              <a href="{{ url_for('fees.receipt', payment_id=f.payments[0].id) }}" class="btn btn-secondary btn-icon" title="Print Latest Receipt">
+                <i class="bi bi-receipt"></i>
+              </a>
+              {% endif %}
+
+              <form id="del-fee-{{ f.id }}" action="{{ url_for('fees.delete', fee_id=f.id) }}" method="POST" style="display: inline;">
+                <button type="button" class="btn btn-danger btn-icon" title="Delete Invoice" onclick="confirmDelete('del-fee-{{ f.id }}', 'fee invoice {{ f.title }}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+            <i class="bi bi-credit-card-2-back" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+            No fee invoices found.
+            <div style="margin-top: 0.75rem;">
+              <a href="{{ url_for('fees.add') }}" class="btn btn-primary btn-sm">Create New Fee Invoice</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RECORD PAYMENT MODAL -->
+<div class="modal-backdrop" id="paymentModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h4><i class="bi bi-cash-coin text-success"></i> Record Fee Payment</h4>
+      <button type="button" class="alert-close" onclick="closeModal('paymentModal')">&times;</button>
+    </div>
+    
+    <form id="paymentModalForm" method="POST" action="">
+      <div class="modal-body">
+        
+        <div style="background-color: var(--surface-alt); border-radius: var(--radius-sm); padding: 0.85rem; margin-bottom: 1.25rem;">
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Student: <strong id="modalStudentName" style="color: var(--text-main);">-</strong></div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Invoice: <strong id="modalFeeTitle" style="color: var(--text-main);">-</strong></div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Pending Balance: <strong id="modalBalanceAmount" style="color: var(--danger-text); font-size: 0.95rem;">$0.00</strong></div>
+        </div>
+
+        <div class="form-group">
+          <label for="pay_amount">Payment Amount ($) <span style="color: var(--danger);">*</span></label>
+          <input type="number" step="0.01" id="pay_amount" name="amount" class="form-control" required placeholder="Enter amount to pay">
+        </div>
+
+        <div class="form-group">
+          <label for="pay_method">Payment Mode</label>
+          <select id="pay_method" name="payment_method" class="form-select">
+            <option value="Cash">Cash</option>
+            <option value="Online / Card">Online / Credit/Debit Card</option>
+            <option value="UPI">UPI / Digital Wallet</option>
+            <option value="Bank Transfer">Bank Transfer / NEFT</option>
+            <option value="Cheque">Cheque</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="pay_txn">Transaction ID / Reference (Optional)</label>
+          <input type="text" id="pay_txn" name="transaction_id" class="form-control" placeholder="e.g. TXN987654321">
+        </div>
+
+        <div class="form-group">
+          <label for="pay_notes">Notes</label>
+          <input type="text" id="pay_notes" name="notes" class="form-control" placeholder="Optional payment remarks">
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('paymentModal')">Cancel</button>
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-check2-circle"></i> Confirm & Generate Receipt
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script>
+function openPaymentModal(feeId, studentName, feeTitle, balance) {
+  document.getElementById('paymentModalForm').action = `/fees/pay/${feeId}`;
+  document.getElementById('modalStudentName').textContent = studentName;
+  document.getElementById('modalFeeTitle').textContent = feeTitle;
+  document.getElementById('modalBalanceAmount').textContent = `$${balance.toFixed(2)}`;
+  document.getElementById('pay_amount').value = balance.toFixed(2);
+  document.getElementById('pay_amount').max = balance;
+  openModal('paymentModal');
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Fee Statement - {{ student.full_name }}{% endblock %}
+{% block page_heading %}Student Fee Statement{% endblock %}
+{% block page_subheading %}Complete account ledger and fee statement for {{ student.full_name }}{% endblock %}
+
+{% block content %}
+
+<!-- ACTION BAR (Hidden in print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="{{ url_for('students.view_profile', id=student.id) }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Student Profile
+      </a>
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('fees.add') }}" class="btn btn-success btn-sm">
+          <i class="bi bi-receipt"></i> Create New Invoice
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Statement
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINTABLE FEE STATEMENT DOCUMENT -->
+<div class="printable-document card" style="max-width: 900px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <div class="report-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Accounts & Student Finance Office &bull; Statement of Account</p>
+    <div style="margin-top: 0.5rem;">
+      <span style="display: inline-block; background: var(--sidebar-bg); color: white; padding: 0.25rem 1rem; font-weight: 700; font-size: 0.82rem; border-radius: var(--radius-full); text-transform: uppercase;">
+        Student Financial Ledger
+      </span>
+    </div>
+  </div>
+
+  <!-- STUDENT METADATA -->
+  <div style="background-color: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; font-size: 0.85rem;">
+      <div>
+        <span style="color: var(--text-muted);">Student Name:</span>
+        <div style="font-weight: 700; font-size: 0.95rem;">{{ student.full_name }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Student ID / Roll No:</span>
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary);">{{ student.student_id }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Department & Course:</span>
+        <div style="font-weight: 600;">{{ student.department.name }} &bull; {{ student.course }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Parent / Guardian Contact:</span>
+        <div style="font-weight: 600;">{{ student.parent_name }} ({{ student.parent_phone }})</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div style="display: flex; justify-content: space-around; background-color: #f8fafc; border: 1px solid var(--border); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1.75rem; text-align: center;">
+    <div>
+      <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Total Invoiced</span>
+      <div style="font-size: 1.25rem; font-weight: 800;">${{ "{:,.2f}".format(total_fees) }}</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Total Paid</span>
+      <div style="font-size: 1.25rem; font-weight: 800; color: var(--success-text);">${{ "{:,.2f}".format(total_paid) }}</div>
+    </div>
+    <div>
+      <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Balance Outstanding</span>
+      <div style="font-size: 1.25rem; font-weight: 800; color: {% if total_due > 0 %}var(--danger-text){% else %}var(--success-text){% endif %};">
+        ${{ "{:,.2f}".format(total_due) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- INVOICES & PAYMENTS TABLE -->
+  <table class="custom-table" style="margin-bottom: 2rem;">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th>Fee Category & Title</th>
+        <th>Due Date</th>
+        <th style="text-align: right;">Total Fee</th>
+        <th style="text-align: right;">Paid</th>
+        <th style="text-align: right;">Due</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fee_records %}
+      <tr>
+        <td>
+          <strong>{{ f.title }}</strong>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">{{ f.fee_category }}</div>
+        </td>
+        <td>{{ f.due_date.strftime('%d-%b-%Y') }}</td>
+        <td style="text-align: right;">${{ "{:,.2f}".format(f.total_amount) }}</td>
+        <td style="text-align: right; color: var(--success-text); font-weight: 600;">${{ "{:,.2f}".format(f.paid_amount) }}</td>
+        <td style="text-align: right; color: {% if f.balance_amount > 0 %}var(--danger-text){% else %}var(--text-muted){% endif %}; font-weight: 600;">
+          ${{ "{:,.2f}".format(f.balance_amount) }}
+        </td>
+        <td>
+          <span class="badge {{ f.status.lower().replace(' ', '-') }}">{{ f.status }}</span>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No fee records found for this student.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- SIGNATURE BLOCK -->
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Student / Guardian</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Acknowledgement</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Accounts Department</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Official Seal & Signature</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

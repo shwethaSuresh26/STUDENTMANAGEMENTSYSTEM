@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Student{% endblock %}
+{% block page_heading %}Student Admission{% endblock %}
+{% block page_subheading %}Register a new student with complete personal, academic, and parent details{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+  
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="bi bi-person-plus-fill"></i> New Student Registration Form</h3>
+      <a href="{{ url_for('students.index') }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
+    </div>
+    
+    <div class="card-body">
+      <form action="{{ url_for('students.add') }}" method="POST" enctype="multipart/form-data">
+        
+        <!-- SECTION 1: PERSONAL DETAILS & AVATAR -->
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 1.25rem; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+          <i class="bi bi-person-badge"></i> 1. Personal Details
+        </h4>
+
+        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+          
+          <!-- Avatar Preview Block -->
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+            <img id="photoPreview" 
+                 src="{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}" 
+                 class="avatar-img" 
+                 style="width: 100px; height: 100px; border: 3px solid var(--border); box-shadow: var(--shadow-sm);" 
+                 alt="Photo Preview">
+            
+            <label class="btn btn-secondary btn-sm" style="cursor: pointer;">
+              <i class="bi bi-camera"></i> Upload Photo
+              <input type="file" id="photoInput" name="photo" accept="image/*" style="display: none;">
+            </label>
+            <small style="font-size: 0.7rem; color: var(--text-muted);">Max size: 5MB</small>
+          </div>
+
+          <!-- Personal Fields Grid -->
+          <div style="flex: 1; min-width: 280px;">
+            <div class="form-grid">
+              
+              <div class="form-group">
+                <label for="student_id">Student ID / Roll Number <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="student_id" name="student_id" class="form-control" required placeholder="e.g. STU2026001" value="{{ form_data.student_id if form_data else suggested_id }}">
+              </div>
+
+              <div class="form-group">
+                <label for="gender">Gender <span style="color: var(--danger);">*</span></label>
+                <select id="gender" name="gender" class="form-select" required>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="first_name">First Name <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="first_name" name="first_name" class="form-control" required placeholder="First name" value="{{ form_data.first_name if form_data else '' }}">
+              </div>
+
+              <div class="form-group">
+                <label for="last_name">Last Name <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="last_name" name="last_name" class="form-control" required placeholder="Last name" value="{{ form_data.last_name if form_data else '' }}">
+              </div>
+
+              <div class="form-group">
+                <label for="dob">Date of Birth <span style="color: var(--danger);">*</span></label>
+                <input type="date" id="dob" name="dob" class="form-control" required value="{{ form_data.dob if form_data else '2005-01-15' }}">
+              </div>
+
+              <div class="form-group">
+                <label for="status">Enrollment Status</label>
+                <select id="status" name="status" class="form-select">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="Suspended">Suspended</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SECTION 2: CONTACT & ADDRESS -->
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 1.25rem 0; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+          <i class="bi bi-geo-alt"></i> 2. Contact & Address Details
+        </h4>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="email">Student Email Address <span style="color: var(--danger);">*</span></label>
+            <input type="email" id="email" name="email" class="form-control" required placeholder="student@college.edu" value="{{ form_data.email if form_data else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number <span style="color: var(--danger);">*</span></label>
+            <input type="tel" id="phone" name="phone" class="form-control" required placeholder="+1 555-019-2834" value="{{ form_data.phone if form_data else '' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address">Residential Address <span style="color: var(--danger);">*</span></label>
+          <textarea id="address" name="address" class="form-control" rows="2" required placeholder="Street address, City, State, ZIP code">{{ form_data.address if form_data else '' }}</textarea>
+        </div>
+
+        <!-- SECTION 3: ACADEMIC DETAILS -->
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 1.25rem 0; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+          <i class="bi bi-mortarboard"></i> 3. Academic Details
+        </h4>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="department_id">Department <span style="color: var(--danger);">*</span></label>
+            <select id="department_id" name="department_id" class="form-select" required>
+              <option value="">Select Department</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="course">Course / Degree Program <span style="color: var(--danger);">*</span></label>
+            <input type="text" id="course" name="course" class="form-control" required placeholder="e.g. B.Tech Computer Science" value="{{ form_data.course if form_data else 'B.Tech' }}">
+          </div>
+
+          <div class="form-group">
+            <label for="year">Year of Study <span style="color: var(--danger);">*</span></label>
+            <select id="year" name="year" class="form-select" required>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="semester">Semester <span style="color: var(--danger);">*</span></label>
+            <select id="semester" name="semester" class="form-select" required>
+              {% for i in range(1, 9) %}
+              <option value="{{ i }}">Semester {{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="admission_date">Admission Date <span style="color: var(--danger);">*</span></label>
+            <input type="date" id="admission_date" name="admission_date" class="form-control" required value="{{ today_date_iso if today_date_iso else '2026-08-01' }}">
+          </div>
+        </div>
+
+        <!-- SECTION 4: PARENT / GUARDIAN DETAILS -->
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 1.25rem 0; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+          <i class="bi bi-people"></i> 4. Parent / Guardian Details
+        </h4>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label for="parent_name">Parent / Guardian Name <span style="color: var(--danger);">*</span></label>
+            <input type="text" id="parent_name" name="parent_name" class="form-control" required placeholder="Full Name" value="{{ form_data.parent_name if form_data else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label for="parent_phone">Parent Phone Number <span style="color: var(--danger);">*</span></label>
+            <input type="tel" id="parent_phone" name="parent_phone" class="form-control" required placeholder="Phone number" value="{{ form_data.parent_phone if form_data else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label for="parent_relation">Relationship</label>
+            <select id="parent_relation" name="parent_relation" class="form-select">
+              <option value="Father">Father</option>
+              <option value="Mother">Mother</option>
+              <option value="Guardian">Guardian</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+          <a href="{{ url_for('students.index') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem;">
+            <i class="bi bi-check-lg"></i> Complete Admission
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

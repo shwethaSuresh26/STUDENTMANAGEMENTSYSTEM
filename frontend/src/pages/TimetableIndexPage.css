@@ -1,0 +1,51 @@
+.timetable-container {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.timetable-day {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.timetable-day-header {
+  background-color: #3b82f6;
+  color: white;
+  padding: 1rem;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.time-slot {
+  display: grid;
+  grid-template-columns: 100px 1fr 100px;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  align-items: center;
+}
+
+.time-slot:last-child {
+  border-bottom: none;
+}
+
+.time-slot .time {
+  font-weight: 600;
+  color: #334155;
+}
+
+.time-slot .subject {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.time-slot .room {
+  background-color: #f1f5f9;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #475569;
+}

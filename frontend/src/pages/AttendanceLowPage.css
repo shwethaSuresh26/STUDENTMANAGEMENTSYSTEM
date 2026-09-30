@@ -1,0 +1,16 @@
+.info-text {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.status-warning {
+  background-color: #fef3c7;
+  color: #b45309;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  display: inline-block;
+}

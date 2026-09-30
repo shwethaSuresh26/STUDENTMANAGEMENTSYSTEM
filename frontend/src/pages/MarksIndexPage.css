@@ -1,0 +1,19 @@
+.status-high {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-average {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.status-low {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-excellent {
+  background-color: #dbeafe;
+  color: #1e40af;
+}

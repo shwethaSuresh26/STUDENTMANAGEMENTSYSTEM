@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt #{{ payment.id }} - {{ student.full_name }}{% endblock %}
+{% block page_heading %}Official Fee Receipt{% endblock %}
+{% block page_subheading %}Proof of fee transaction and official payment receipt{% endblock %}
+
+{% block content %}
+
+<!-- ACTION BAR (Hidden in print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <a href="{{ url_for('fees.index') }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Fees List
+      </a>
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('students.view_profile', id=student.id) }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-person-badge"></i> Student Dossier
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Official Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINTABLE FEE RECEIPT -->
+<div class="printable-document card" style="max-width: 800px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <!-- RECEIPT HEADER -->
+  <div class="receipt-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">100 University Boulevard, Tech Campus, Academic City</p>
+    <div style="margin-top: 0.5rem;">
+      <span style="display: inline-block; background: var(--success); color: white; padding: 0.25rem 1rem; font-weight: 700; font-size: 0.82rem; border-radius: var(--radius-full); text-transform: uppercase; letter-spacing: 0.05em;">
+        Official Fee Payment Receipt
+      </span>
+    </div>
+  </div>
+
+  <!-- RECEIPT METADATA ROW -->
+  <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-size: 0.85rem; border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
+    <div>
+      <div>Receipt No: <strong style="color: var(--primary); font-size: 0.95rem;">#REC-{{ "%06d"|format(payment.id) if payment.id else '000001' }}</strong></div>
+      <div>Transaction ID: <strong>{{ payment.transaction_id or 'TXN-DIRECT' }}</strong></div>
+    </div>
+    <div style="text-align: right;">
+      <div>Payment Date: <strong>{{ generated_date }}</strong></div>
+      <div>Received By: <strong>{{ payment.recorded_by }}</strong></div>
+    </div>
+  </div>
+
+  <!-- STUDENT DETAILS CARD -->
+  <div style="background-color: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; font-size: 0.85rem;">
+      <div>
+        <span style="color: var(--text-muted);">Student Name:</span>
+        <div style="font-weight: 700; font-size: 0.95rem;">{{ student.full_name }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Student ID / Roll No:</span>
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary);">{{ student.student_id }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Department & Course:</span>
+        <div style="font-weight: 600;">{{ student.department.name }} &bull; {{ student.course }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Year & Semester:</span>
+        <div style="font-weight: 600;">Year {{ student.year }} &bull; Semester {{ student.semester }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITEM BREAKDOWN TABLE -->
+  <table class="custom-table" style="margin-bottom: 1.75rem;">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th style="width: 50px;">#</th>
+        <th>Fee Description</th>
+        <th>Category</th>
+        <th>Payment Mode</th>
+        <th style="text-align: right;">Amount Paid</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>
+          <strong>{{ fee.title }}</strong>
+          {% if payment.notes %}<div style="font-size: 0.75rem; color: var(--text-muted);">Note: {{ payment.notes }}</div>{% endif %}
+        </td>
+        <td>{{ fee.fee_category }}</td>
+        <td><strong>{{ payment.payment_method }}</strong></td>
+        <td style="text-align: right; font-weight: 800; font-size: 1.05rem; color: var(--success-text);">
+          ${{ "{:,.2f}".format(payment.amount) }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- TOTAL SUMMARY BLOCK -->
+  <div style="margin-left: auto; max-width: 320px; border-top: 2px solid var(--border); padding-top: 0.85rem; margin-bottom: 2.5rem;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem; font-size: 0.85rem;">
+      <span style="color: var(--text-muted);">Total Invoice Fee:</span>
+      <strong>${{ "{:,.2f}".format(fee.total_amount) }}</strong>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem; font-size: 0.85rem;">
+      <span style="color: var(--text-muted);">Amount Paid (This Transaction):</span>
+      <strong style="color: var(--success-text);">${{ "{:,.2f}".format(payment.amount) }}</strong>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem; font-size: 0.85rem;">
+      <span style="color: var(--text-muted);">Total Amount Paid to Date:</span>
+      <strong>${{ "{:,.2f}".format(fee.paid_amount) }}</strong>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 1rem; border-top: 1px dashed var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
+      <span style="font-weight: 700;">Remaining Balance Due:</span>
+      <strong style="color: {% if fee.balance_amount > 0 %}var(--danger-text){% else %}var(--success-text){% endif %};">
+        ${{ "{:,.2f}".format(fee.balance_amount) }}
+      </strong>
+    </div>
+  </div>
+
+  <!-- STATUS NOTE -->
+  <div style="background-color: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 3rem;">
+    <i class="bi bi-info-circle"></i> This is a computer-generated official receipt. All payments made are non-refundable and subject to institute fee regulations.
+  </div>
+
+  <!-- SIGNATURE ROW -->
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 2rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Student / Guardian Signature</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Verified on Payment</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Authorized Accounts Officer</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">EduManage Finance Office</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

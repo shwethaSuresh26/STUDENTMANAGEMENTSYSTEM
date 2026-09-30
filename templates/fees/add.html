@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Create Fee Invoice{% endblock %}
+{% block page_heading %}Generate Fee Invoice{% endblock %}
+{% block page_subheading %}Issue a tuition, hostel, or examination fee invoice for a student{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="bi bi-receipt"></i> New Fee Structure / Invoice</h3>
+      <a href="{{ url_for('fees.index') }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Fees List
+      </a>
+    </div>
+
+    <div class="card-body">
+      <form action="{{ url_for('fees.add') }}" method="POST">
+        
+        <div class="form-grid">
+          
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="student_id">Select Student <span style="color: var(--danger);">*</span></label>
+            <select id="student_id" name="student_id" class="form-select" required>
+              <option value="">-- Choose Student --</option>
+              {% for s in students %}
+              <option value="{{ s.id }}">{{ s.full_name }} ({{ s.student_id }} &bull; {{ s.department.code }} &bull; Year {{ s.year }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="fee_category">Fee Category <span style="color: var(--danger);">*</span></label>
+            <select id="fee_category" name="fee_category" class="form-select" required>
+              {% for cat in categories %}
+              <option value="{{ cat }}">{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="title">Invoice Title / Description <span style="color: var(--danger);">*</span></label>
+            <input type="text" id="title" name="title" class="form-control" required placeholder="e.g. Semester 1 Tuition Fee 2026">
+          </div>
+
+          <div class="form-group">
+            <label for="total_amount">Total Invoiced Amount ($) <span style="color: var(--danger);">*</span></label>
+            <input type="number" step="0.01" id="total_amount" name="total_amount" class="form-control" required placeholder="e.g. 2500.00">
+          </div>
+
+          <div class="form-group">
+            <label for="due_date">Due Date <span style="color: var(--danger);">*</span></label>
+            <input type="date" id="due_date" name="due_date" class="form-control" required value="{{ today_date_iso if today_date_iso else '2026-09-30' }}">
+          </div>
+
+        </div>
+
+        <!-- OPTIONAL IMMEDIATE PAYMENT SECTION -->
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 1.25rem 0; border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+          <i class="bi bi-cash-coin"></i> Initial / Immediate Payment (Optional)
+        </h4>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="initial_paid">Amount Paid Now ($)</label>
+            <input type="number" step="0.01" id="initial_paid" name="initial_paid" class="form-control" placeholder="0.00 (leave blank if unpaid)">
+          </div>
+
+          <div class="form-group">
+            <label for="payment_method">Payment Mode</label>
+            <select id="payment_method" name="payment_method" class="form-select">
+              <option value="Cash">Cash</option>
+              <option value="Online / Card">Online / Credit/Debit Card</option>
+              <option value="UPI">UPI / Digital Wallet</option>
+              <option value="Bank Transfer">Bank Transfer / NEFT</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="transaction_id">Transaction ID / Cheque No</label>
+            <input type="text" id="transaction_id" name="transaction_id" class="form-control" placeholder="e.g. TXN20260816">
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Payment Notes</label>
+            <input type="text" id="notes" name="notes" class="form-control" placeholder="e.g. Paid in full at admission desk">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+          <a href="{{ url_for('fees.index') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem;">
+            <i class="bi bi-check2-circle"></i> Create Fee Record
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

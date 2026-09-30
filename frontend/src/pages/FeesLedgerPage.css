@@ -1,0 +1,15 @@
+.debit, .credit, .balance {
+  font-weight: 600;
+}
+
+.debit {
+  color: #ef4444;
+}
+
+.credit {
+  color: #16a34a;
+}
+
+.balance {
+  color: #3b82f6;
+}

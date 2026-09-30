@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Hub{% endblock %}
+{% block page_heading %}Reports & Analytics Hub{% endblock %}
+{% block page_subheading %}Generate, filter, and print official institutional reports and exports{% endblock %}
+
+{% block content %}
+
+<div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+  
+  <!-- REPORT 1: STUDENT REPORT -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="card-body" style="padding: 1.75rem;">
+      <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Student Master Report</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1.5rem;">
+        Complete demographic directory of all enrolled students, contact details, emergency parent contacts, and admission dates.
+      </p>
+    </div>
+    <div style="padding: 1rem 1.75rem; border-top: 1px solid var(--border); background-color: var(--surface-alt); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.78rem; color: var(--text-muted);">Print-ready A4</span>
+      <a href="{{ url_for('reports.student_report') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-file-earmark-text"></i> Open Report
+      </a>
+    </div>
+  </div>
+
+  <!-- REPORT 2: ATTENDANCE REPORT -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="card-body" style="padding: 1.75rem;">
+      <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: var(--success-light); color: var(--success-text); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+        <i class="bi bi-calendar-check-fill"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Attendance Analytics Report</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1.5rem;">
+        Classroom attendance performance, monthly percentages, total days attended, and low attendance defaulter records.
+      </p>
+    </div>
+    <div style="padding: 1rem 1.75rem; border-top: 1px solid var(--border); background-color: var(--surface-alt); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.78rem; color: var(--text-muted);">Date range filterable</span>
+      <a href="{{ url_for('reports.attendance_report') }}" class="btn btn-success btn-sm">
+        <i class="bi bi-file-earmark-check"></i> Open Report
+      </a>
+    </div>
+  </div>
+
+  <!-- REPORT 3: MARKS & EXAM REPORT -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="card-body" style="padding: 1.75rem;">
+      <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: #f3e8ff; color: #7e22ce; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+        <i class="bi bi-award-fill"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Marks & Examination Report</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1.5rem;">
+        Semester-wise exam scores, pass/fail percentages, GPA calculations, and student performance rankings.
+      </p>
+    </div>
+    <div style="padding: 1rem 1.75rem; border-top: 1px solid var(--border); background-color: var(--surface-alt); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.78rem; color: var(--text-muted);">Exam filterable</span>
+      <a href="{{ url_for('reports.marks_report') }}" class="btn btn-primary btn-sm" style="background: #7e22ce; border-color: #6b21a8;">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Open Report
+      </a>
+    </div>
+  </div>
+
+  <!-- REPORT 4: FEES & FINANCIAL REPORT -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="card-body" style="padding: 1.75rem;">
+      <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: var(--warning-light); color: var(--warning-text); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+        <i class="bi bi-cash-stack"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Fees & Financial Report</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1.5rem;">
+        Fee collections breakdown, revenue by department, outstanding balances, and fee status reconciliation.
+      </p>
+    </div>
+    <div style="padding: 1rem 1.75rem; border-top: 1px solid var(--border); background-color: var(--surface-alt); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.78rem; color: var(--text-muted);">Financial ledger</span>
+      <a href="{{ url_for('reports.fee_report') }}" class="btn btn-secondary btn-sm" style="color: var(--warning-text);">
+        <i class="bi bi-file-earmark-ruled"></i> Open Report
+      </a>
+    </div>
+  </div>
+
+  <!-- REPORT 5: TIMETABLE REPORT -->
+  <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="card-body" style="padding: 1.75rem;">
+      <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: #ecfeff; color: #0e7490; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+        <i class="bi bi-calendar3"></i>
+      </div>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Timetable Schedule Report</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1.5rem;">
+        Department-wise weekly class schedule, assigned professors, room allocations, and period timings.
+      </p>
+    </div>
+    <div style="padding: 1rem 1.75rem; border-top: 1px solid var(--border); background-color: var(--surface-alt); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.78rem; color: var(--text-muted);">Weekly matrix</span>
+      <a href="{{ url_for('reports.timetable_report') }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-file-earmark-bar-graph"></i> Open Report
+      </a>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

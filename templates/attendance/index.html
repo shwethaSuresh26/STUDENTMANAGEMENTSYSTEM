@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Attendance{% endblock %}
+{% block page_heading %}Attendance Management{% endblock %}
+{% block page_subheading %}Review daily class attendance logs, calculate rates, and inspect attendance records{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<form method="GET" action="{{ url_for('attendance.index') }}" class="filter-bar">
+  <div style="min-width: 160px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">ATTENDANCE DATE</label>
+    <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+  </div>
+
+  <div style="min-width: 200px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">DEPARTMENT</label>
+    <select name="department_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+      <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 200px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">SUBJECT</label>
+    <select name="subject_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Subjects</option>
+      {% for s in subjects %}
+      <option value="{{ s.id }}" {% if selected_subject == s.id %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; align-self: flex-end;">
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-filter"></i> Apply Filter
+    </button>
+    <a href="{{ url_for('attendance.index') }}" class="btn btn-secondary btn-sm" title="Reset">
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </a>
+  </div>
+
+  <div style="margin-left: auto; display: flex; gap: 0.5rem; align-self: flex-end;">
+    <a href="{{ url_for('attendance.low_attendance') }}" class="btn btn-secondary btn-sm" style="color: var(--warning-text);">
+      <i class="bi bi-exclamation-triangle"></i> Low Attendance (<75%)
+    </a>
+    <a href="{{ url_for('attendance.mark') }}" class="btn btn-success">
+      <i class="bi bi-calendar-check"></i> Mark Attendance
+    </a>
+  </div>
+</form>
+
+<!-- SUMMARY KPI ROW -->
+<div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.5rem;">
+  <div class="kpi-card blue" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Total Marked</h4>
+      <div class="kpi-value" style="font-size: 1.5rem;">{{ total_cnt }}</div>
+    </div>
+  </div>
+  <div class="kpi-card green" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Present</h4>
+      <div class="kpi-value" style="font-size: 1.5rem; color: var(--success-text);">{{ present_cnt }}</div>
+    </div>
+  </div>
+  <div class="kpi-card rose" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Absent</h4>
+      <div class="kpi-value" style="font-size: 1.5rem; color: var(--danger-text);">{{ absent_cnt }}</div>
+    </div>
+  </div>
+  <div class="kpi-card purple" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Attendance Rate</h4>
+      <div class="kpi-value" style="font-size: 1.5rem;">{{ rate }}%</div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTENDANCE RECORDS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-calendar3"></i> Attendance Logs for {{ selected_date }}</h3>
+    <a href="{{ url_for('reports.attendance_report') }}" class="btn btn-secondary btn-sm">
+      <i class="bi bi-printer"></i> Print Attendance Report
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Department</th>
+          <th>Subject & Code</th>
+          <th>Status</th>
+          <th>Remarks</th>
+          <th>Recorded By</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>
+            <div class="student-cell">
+              <img src="{{ url_for('static', filename='uploads/avatars/' + r.student.photo_filename) }}" 
+                   onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+                   class="avatar-img" alt="{{ r.student.full_name }}">
+              <div class="student-name-sub">
+                <a href="{{ url_for('students.view_profile', id=r.student.id) }}" style="text-decoration: none; color: inherit;">
+                  <strong>{{ r.student.full_name }}</strong>
+                </a>
+                <span>{{ r.student.student_id }}</span>
+              </div>
+            </div>
+          </td>
+          <td>{{ r.student.department.code }}</td>
+          <td>
+            <strong>{{ r.subject.name }}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ r.subject.code }} &bull; {{ r.subject.teacher_name }}</div>
+          </td>
+          <td>
+            <span class="badge {{ r.status.lower() }}">{{ r.status }}</span>
+          </td>
+          <td>{{ r.remarks or '-' }}</td>
+          <td><span style="font-size: 0.75rem; color: var(--text-muted);">{{ r.recorded_by }}</span></td>
+          <td style="text-align: right;">
+            <form id="del-att-{{ r.id }}" action="{{ url_for('attendance.delete', id=r.id) }}" method="POST" style="display: inline;">
+              <button type="button" class="btn btn-danger btn-icon" title="Delete Entry" onclick="confirmDelete('del-att-{{ r.id }}', 'this attendance entry')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+            <i class="bi bi-calendar-x" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+            No attendance entries recorded for this date/filter.
+            <div style="margin-top: 0.75rem;">
+              <a href="{{ url_for('attendance.mark', date=selected_date) }}" class="btn btn-primary btn-sm">Mark Attendance Now</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

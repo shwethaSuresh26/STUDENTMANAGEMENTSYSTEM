@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Timetable Schedule Report{% endblock %}
+{% block page_heading %}Timetable Schedule Report{% endblock %}
+{% block page_subheading %}Institutional weekly class and faculty schedule allocation register{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR (Hidden in print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <form method="GET" action="{{ url_for('reports.timetable_report') }}" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+      <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+        <select name="department_id" class="form-select" style="width: 200px;" onchange="this.form.submit()">
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if selected_dept_id == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+          {% endfor %}
+        </select>
+
+        <select name="year" class="form-select" style="width: 140px;" onchange="this.form.submit()">
+          <option value="1" {% if selected_year == 1 %}selected{% endif %}>1st Year</option>
+          <option value="2" {% if selected_year == 2 %}selected{% endif %}>2nd Year</option>
+          <option value="3" {% if selected_year == 3 %}selected{% endif %}>3rd Year</option>
+          <option value="4" {% if selected_year == 4 %}selected{% endif %}>4th Year</option>
+        </select>
+
+        <select name="semester" class="form-select" style="width: 140px;" onchange="this.form.submit()">
+          {% for i in range(1, 9) %}
+          <option value="{{ i }}" {% if selected_sem == i %}selected{% endif %}>Semester {{ i }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Reports Hub
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Schedule
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PRINTABLE TIMETABLE REPORT DOCUMENT -->
+<div class="printable-document card" style="max-width: 1000px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <div class="report-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Academic Planning & Scheduling Office &bull; Weekly Lecture Schedule</p>
+    
+    <div style="margin-top: 0.75rem; background-color: var(--surface-alt); padding: 0.65rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem;">
+      Department: <strong>{{ selected_dept.name if selected_dept else 'All' }}</strong> &bull; 
+      Class: <strong>Year {{ selected_year }} (Semester {{ selected_sem }})</strong> &bull; 
+      Generated: <strong>{{ generated_date }}</strong>
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th style="width: 120px;">Day</th>
+        <th style="width: 90px;">Period</th>
+        <th>Time Slot</th>
+        <th>Subject Name & Code</th>
+        <th>Assigned Professor</th>
+        <th>Lecture Hall</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for slot in slots %}
+      <tr>
+        <td><strong>{{ slot.day_of_week }}</strong></td>
+        <td>Period {{ slot.period_number }}</td>
+        <td>{{ slot.start_time }} - {{ slot.end_time }}</td>
+        <td>
+          <strong>{{ slot.subject.name }}</strong>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">({{ slot.subject.code }})</span>
+        </td>
+        <td>{{ slot.teacher_name }}</td>
+        <td><span class="badge active">{{ slot.room_number }}</span></td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No timetable entries configured for this department & semester.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Timetable Coordinator</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Prepared By</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Dean of Academic Affairs</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Approved & Published</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

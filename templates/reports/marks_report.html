@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Performance Report{% endblock %}
+{% block page_heading %}Examination Marks Report{% endblock %}
+{% block page_subheading %}Institutional exam performance and grading analysis report{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR (Hidden in print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <form method="GET" action="{{ url_for('reports.marks_report') }}" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+      <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+        <select name="exam_name" class="form-select" style="width: 180px;" onchange="this.form.submit()">
+          <option value="">All Exams</option>
+          {% for ex in exams %}
+          <option value="{{ ex }}" {% if selected_exam == ex %}selected{% endif %}>{{ ex }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="semester" class="form-select" style="width: 150px;" onchange="this.form.submit()">
+          <option value="">All Semesters</option>
+          {% for i in range(1, 9) %}
+          <option value="{{ i }}" {% if selected_sem == i %}selected{% endif %}>Semester {{ i }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="department_id" class="form-select" style="width: 200px;" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Reports Hub
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PRINTABLE MARKS REPORT DOCUMENT -->
+<div class="printable-document card" style="max-width: 1050px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <div class="report-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Examination Branch &bull; Consolidated Grade Register</p>
+    
+    <div style="display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.82rem; background-color: var(--surface-alt); padding: 0.65rem 1rem; border-radius: var(--radius-sm);">
+      <span>Evaluated: <strong>{{ total_marks_cnt }} Entries</strong></span>
+      <span>Passed: <strong style="color: var(--success-text);">{{ pass_cnt }}</strong></span>
+      <span>Failed: <strong style="color: var(--danger-text);">{{ fail_cnt }}</strong></span>
+      <span>Pass Percentage: <strong>{{ pass_rate }}%</strong></span>
+    </div>
+  </div>
+
+  <table class="custom-table">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th style="width: 40px;">#</th>
+        <th>Student ID</th>
+        <th>Student Name</th>
+        <th>Department</th>
+        <th>Exam</th>
+        <th>Subject</th>
+        <th style="text-align: center;">Max</th>
+        <th style="text-align: center;">Obtained</th>
+        <th style="text-align: center;">%</th>
+        <th style="text-align: center;">Grade</th>
+        <th style="text-align: center;">Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in marks %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><strong style="color: var(--primary);">{{ m.student.student_id }}</strong></td>
+        <td><strong>{{ m.student.full_name }}</strong></td>
+        <td>{{ m.student.department.code }}</td>
+        <td>{{ m.exam_name }}</td>
+        <td>{{ m.subject.name }}</td>
+        <td style="text-align: center;">{{ m.max_marks|int }}</td>
+        <td style="text-align: center; font-weight: 700;">{{ m.marks_obtained }}</td>
+        <td style="text-align: center;">{{ m.percentage }}%</td>
+        <td style="text-align: center;">
+          <span class="badge grade-{{ m.grade[0].lower() }}">{{ m.grade }}</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="badge {{ m.status.lower() }}">{{ m.status }}</span>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 2rem;">No marks records found for this query.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Tabulator</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Verified Entries</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Controller of Examinations</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Official Seal & Signature</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

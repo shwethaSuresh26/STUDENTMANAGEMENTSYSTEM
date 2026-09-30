@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Sheet - {{ student.full_name }}{% endblock %}
+{% block page_heading %}Official Student Mark Sheet{% endblock %}
+{% block page_subheading %}Comprehensive academic transcript and grade sheet{% endblock %}
+
+{% block content %}
+
+<!-- ACTION & FILTER BAR (Hidden during print) -->
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+  <div class="card-body" style="padding: 1rem 1.5rem;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+      
+      <form method="GET" action="{{ url_for('marks.marksheet', student_id=student.id) }}" style="display: flex; gap: 0.85rem; align-items: center; flex-wrap: wrap;">
+        <span style="font-size: 0.85rem; font-weight: 600;">Filter by Semester:</span>
+        <select name="semester" class="form-select" style="width: 160px;" onchange="this.form.submit()">
+          <option value="">All Semesters</option>
+          {% for sem in available_semesters %}
+          <option value="{{ sem }}" {% if selected_sem == sem %}selected{% endif %}>Semester {{ sem }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="exam_name" class="form-select" style="width: 180px;" onchange="this.form.submit()">
+          <option value="">All Exams</option>
+          {% for ex in available_exams %}
+          <option value="{{ ex }}" {% if selected_exam == ex %}selected{% endif %}>{{ ex }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="{{ url_for('students.view_profile', id=student.id) }}" class="btn btn-secondary btn-sm">
+          <i class="bi bi-arrow-left"></i> Student Profile
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">
+          <i class="bi bi-printer-fill"></i> Print Official Mark Sheet
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PRINTABLE OFFICIAL MARKSHEET DOCUMENT -->
+<div class="printable-document card" style="max-width: 880px; margin: 0 auto; background: white; padding: 2.5rem; border: 1px solid var(--border);">
+  
+  <!-- INSTITUTION HEADER -->
+  <div class="marksheet-header" style="text-align: center; border-bottom: 2px solid var(--sidebar-bg); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+      <i class="bi bi-mortarboard-fill" style="font-size: 2rem; color: var(--primary);"></i>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; text-transform: uppercase; letter-spacing: 0.02em;">
+        EduManage Institute of Technology
+      </h1>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Affiliated with National Technical University &bull; Accredited Grade 'A+'</p>
+    <div style="margin-top: 0.5rem;">
+      <span style="display: inline-block; background: var(--sidebar-bg); color: white; padding: 0.3rem 1.25rem; font-weight: 700; font-size: 0.85rem; border-radius: var(--radius-full); letter-spacing: 0.05em; text-transform: uppercase;">
+        Statement of Marks & Grades
+      </span>
+    </div>
+  </div>
+
+  <!-- STUDENT METADATA GRID -->
+  <div style="background-color: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.75rem;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-size: 0.85rem;">
+      <div>
+        <span style="color: var(--text-muted);">Student Name:</span>
+        <div style="font-weight: 700; font-size: 0.95rem;">{{ student.full_name }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Roll / Student ID:</span>
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary);">{{ student.student_id }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Department:</span>
+        <div style="font-weight: 700;">{{ student.department.name }} ({{ student.department.code }})</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Program / Course:</span>
+        <div style="font-weight: 600;">{{ student.course }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Year & Semester:</span>
+        <div style="font-weight: 600;">Year {{ student.year }} &bull; Sem {{ student.semester }}</div>
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">Issue Date:</span>
+        <div style="font-weight: 600;">{{ generated_date }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBJECT MARKS TABLE -->
+  <table class="custom-table" style="margin-bottom: 1.5rem;">
+    <thead>
+      <tr style="background: var(--surface-alt);">
+        <th style="width: 50px;">#</th>
+        <th>Subject Code & Name</th>
+        <th>Exam</th>
+        <th>Semester</th>
+        <th style="text-align: center;">Max Marks</th>
+        <th style="text-align: center;">Marks Obtained</th>
+        <th style="text-align: center;">Percentage</th>
+        <th style="text-align: center;">Grade</th>
+        <th style="text-align: center;">Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in marks %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>
+          <strong>{{ m.subject.name }}</strong>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Code: {{ m.subject.code }} &bull; {{ m.subject.credits }} Credits</div>
+        </td>
+        <td>{{ m.exam_name }}</td>
+        <td>Sem {{ m.semester }}</td>
+        <td style="text-align: center;">{{ m.max_marks|int }}</td>
+        <td style="text-align: center; font-weight: 700; font-size: 0.95rem;">{{ m.marks_obtained }}</td>
+        <td style="text-align: center;">{{ m.percentage }}%</td>
+        <td style="text-align: center;">
+          <span class="badge grade-{{ m.grade[0].lower() }}">{{ m.grade }}</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="badge {{ m.status.lower() }}">{{ m.status }}</span>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">No marks recorded for this selection.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- CUMULATIVE SUMMARY BOX -->
+  <div style="border: 2px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 2.5rem; background: #fafafa;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Total Score</span>
+        <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">
+          {{ total_obtained }} / {{ total_max|int }}
+        </div>
+      </div>
+      <div>
+        <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Aggregate Percentage</span>
+        <div style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">
+          {{ overall_pct }}%
+        </div>
+      </div>
+      <div>
+        <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Overall Grade</span>
+        <div style="font-size: 1.2rem; font-weight: 800;">
+          <span class="badge grade-{{ overall_grade[0].lower() }}" style="font-size: 1rem; padding: 0.35rem 0.85rem;">{{ overall_grade }}</span>
+        </div>
+      </div>
+      <div>
+        <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase;">Final Status</span>
+        <div style="font-size: 1.2rem; font-weight: 800;">
+          <span class="badge {% if final_result == 'PASS' %}present{% elif final_result == 'FAIL' %}absent{% else %}inactive{% endif %}" style="font-size: 1rem; padding: 0.35rem 0.85rem;">
+            {{ final_result }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRADING SCALE FOOTER -->
+  <div style="font-size: 0.72rem; color: var(--text-muted); border-top: 1px dashed var(--border); padding-top: 0.75rem; margin-bottom: 2.5rem;">
+    <strong>Grading Scale:</strong> A+ (90-100%) Excellent | A (80-89%) Very Good | B (70-79%) Good | C (60-69%) Satisfactory | D (40-59%) Pass | F (&lt;40%) Fail
+  </div>
+
+  <!-- SIGNATURE BLOCK -->
+  <div class="signature-block" style="display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1rem;">
+    <div class="sig-line">
+      <div style="font-weight: 600;">Faculty Advisor</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Signature & Date</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Controller of Examinations</div>
+      <div style="color: var(--text-muted); font-size: 0.75rem;">Official Seal & Signature</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

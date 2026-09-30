@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Low Attendance Defaulters{% endblock %}
+{% block page_heading %}Low Attendance Warning{% endblock %}
+{% block page_subheading %}Students with overall attendance below {{ threshold }}% requiring intervention{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<form method="GET" action="{{ url_for('attendance.low_attendance') }}" class="filter-bar">
+  <div style="min-width: 200px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">DEPARTMENT</label>
+    <select name="department_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+      <option value="{{ d.id }}" {% if selected_dept == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 150px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">THRESHOLD (%)</label>
+    <select name="threshold" class="form-select" onchange="this.form.submit()">
+      <option value="75" {% if threshold == 75.0 %}selected{% endif %}>Below 75% (Standard)</option>
+      <option value="80" {% if threshold == 80.0 %}selected{% endif %}>Below 80%</option>
+      <option value="60" {% if threshold == 60.0 %}selected{% endif %}>Below 60% (Critical)</option>
+    </select>
+  </div>
+
+  <div style="margin-left: auto;">
+    <a href="{{ url_for('reports.attendance_report') }}" class="btn btn-secondary btn-sm">
+      <i class="bi bi-printer"></i> Print Defaulters Report
+    </a>
+  </div>
+</form>
+
+<!-- DEFAULTERS CARD -->
+<div class="card">
+  <div class="card-header" style="background-color: var(--danger-light); border-bottom-color: #fecaca;">
+    <h3 style="color: var(--danger-text);"><i class="bi bi-exclamation-triangle-fill"></i> At-Risk Students ({{ defaulters|length }})</h3>
+    <span class="badge absent">Threshold: &lt; {{ threshold }}%</span>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Department & Year</th>
+          <th>Total Classes</th>
+          <th>Attended</th>
+          <th>Absent</th>
+          <th>Attendance %</th>
+          <th>Shortage</th>
+          <th>Parent / Emergency Contact</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in defaulters %}
+        {% set s = item.student %}
+        {% set st = item.stats %}
+        <tr>
+          <td>
+            <div class="student-cell">
+              <img src="{{ url_for('static', filename='uploads/avatars/' + s.photo_filename) }}" 
+                   onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+                   class="avatar-img" alt="{{ s.full_name }}">
+              <div class="student-name-sub">
+                <a href="{{ url_for('students.view_profile', id=s.id) }}" style="text-decoration: none; color: inherit;">
+                  <strong>{{ s.full_name }}</strong>
+                </a>
+                <span>{{ s.student_id }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <strong>{{ s.department.code }}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Year {{ s.year }}</div>
+          </td>
+          <td>{{ st.total }}</td>
+          <td style="color: var(--success-text); font-weight: 600;">{{ st.present }}</td>
+          <td style="color: var(--danger-text); font-weight: 600;">{{ st.absent }}</td>
+          <td>
+            <span class="badge absent" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+              {{ st.percentage }}%
+            </span>
+          </td>
+          <td style="color: var(--danger-text); font-weight: 700;">
+            -{{ item.shortage }}%
+          </td>
+          <td>
+            <div style="font-size: 0.82rem;">
+              <div><strong>{{ s.parent_name }}</strong> ({{ s.parent_relation }})</div>
+              <div style="color: var(--primary);"><i class="bi bi-telephone"></i> {{ s.parent_phone }}</div>
+            </div>
+          </td>
+          <td style="text-align: right;">
+            <a href="{{ url_for('students.view_profile', id=s.id) }}" class="btn btn-secondary btn-sm" title="View Profile">
+              <i class="bi bi-person-lines-fill"></i> View Dossier
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" style="text-align: center; color: var(--success-text); padding: 3rem;">
+            <i class="bi bi-check-circle" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;"></i>
+            Excellent! No students currently fall below the {{ threshold }}% attendance threshold.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

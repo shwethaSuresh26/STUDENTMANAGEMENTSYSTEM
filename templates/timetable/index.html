@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Timetable{% endblock %}
+{% block page_heading %}Timetable Schedule{% endblock %}
+{% block page_subheading %}Weekly class schedule matrix for departments and academic semesters{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<form method="GET" action="{{ url_for('timetable.index') }}" class="filter-bar">
+  <div style="min-width: 200px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">DEPARTMENT</label>
+    <select name="department_id" class="form-select" onchange="this.form.submit()">
+      {% for d in departments %}
+      <option value="{{ d.id }}" {% if selected_dept_id == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 120px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">YEAR</label>
+    <select name="year" class="form-select" onchange="this.form.submit()">
+      <option value="1" {% if selected_year == 1 %}selected{% endif %}>1st Year</option>
+      <option value="2" {% if selected_year == 2 %}selected{% endif %}>2nd Year</option>
+      <option value="3" {% if selected_year == 3 %}selected{% endif %}>3rd Year</option>
+      <option value="4" {% if selected_year == 4 %}selected{% endif %}>4th Year</option>
+    </select>
+  </div>
+
+  <div style="min-width: 120px;">
+    <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">SEMESTER</label>
+    <select name="semester" class="form-select" onchange="this.form.submit()">
+      {% for i in range(1, 9) %}
+      <option value="{{ i }}" {% if selected_sem == i %}selected{% endif %}>Semester {{ i }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; align-self: flex-end;">
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-filter"></i> Apply
+    </button>
+  </div>
+
+  <div style="margin-left: auto; display: flex; gap: 0.5rem; align-self: flex-end;">
+    <a href="{{ url_for('reports.timetable_report', department_id=selected_dept_id, year=selected_year, semester=selected_sem) }}" class="btn btn-secondary btn-sm">
+      <i class="bi bi-printer"></i> Print Schedule
+    </a>
+    <a href="{{ url_for('timetable.manage') }}" class="btn btn-success">
+      <i class="bi bi-plus-circle"></i> Manage Slots
+    </a>
+  </div>
+</form>
+
+<!-- TIMETABLE MATRIX CARD -->
+<div class="card">
+  <div class="card-header">
+    <h3>
+      <i class="bi bi-calendar3"></i> 
+      Weekly Schedule: {% if selected_dept %}{{ selected_dept.name }} ({{ selected_dept.code }}) &bull; Year {{ selected_year }} (Sem {{ selected_sem }}){% else %}Timetable{% endif %}
+    </h3>
+    <span style="font-size: 0.8rem; color: var(--text-muted);">{{ total_slots }} Allocated Periods</span>
+  </div>
+
+  <div class="table-responsive" style="padding: 1.25rem;">
+    <div class="timetable-grid">
+      
+      <!-- TOP-LEFT CORNER -->
+      <div class="tt-header">Day / Period</div>
+
+      <!-- PERIOD HEADERS -->
+      {% for period_num, period_time in period_hours %}
+      <div class="tt-header">
+        Period {{ period_num }}
+        <div style="font-size: 0.68rem; font-weight: normal; opacity: 0.85;">{{ period_time }}</div>
+      </div>
+      {% endfor %}
+
+      <!-- DAY ROWS (Monday through Saturday) -->
+      {% for day in days_of_week %}
+        
+        <!-- Day Label -->
+        <div class="tt-time-cell">
+          <strong>{{ day }}</strong>
+        </div>
+
+        <!-- Period Slots -->
+        {% for period_num, period_time in period_hours %}
+          {% set slot = timetable_matrix.get(day, {}).get(period_num) %}
+          
+          <div class="tt-slot-cell">
+            {% if slot %}
+              <div class="tt-card">
+                <div class="tt-subject">{{ slot.subject.name }}</div>
+                <div class="tt-teacher"><i class="bi bi-person"></i> {{ slot.teacher_name }}</div>
+                <div class="tt-room"><i class="bi bi-geo-alt"></i> {{ slot.room_number }}</div>
+              </div>
+            {% else %}
+              <div style="text-align: center; color: var(--text-light); font-size: 0.72rem; font-style: italic;">
+                - Free -
+              </div>
+            {% endif %}
+          </div>
+
+        {% endfor %}
+
+      {% endfor %}
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

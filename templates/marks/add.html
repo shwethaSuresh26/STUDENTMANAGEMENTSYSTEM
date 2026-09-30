@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Student Marks{% endblock %}
+{% block page_heading %}Add Exam Marks{% endblock %}
+{% block page_subheading %}Record examination scores with automatic grade and percentage calculation{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="bi bi-award"></i> Examination Marks Entry Form</h3>
+      <a href="{{ url_for('marks.index') }}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Marks List
+      </a>
+    </div>
+
+    <div class="card-body">
+      <form action="{{ url_for('marks.add') }}" method="POST">
+        
+        <div class="form-grid">
+          
+          <div class="form-group">
+            <label for="student_id">Select Student <span style="color: var(--danger);">*</span></label>
+            <select id="student_id" name="student_id" class="form-select" required>
+              <option value="">-- Choose Student --</option>
+              {% for s in students %}
+              <option value="{{ s.id }}">{{ s.full_name }} ({{ s.student_id }} - {{ s.department.code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="subject_id">Subject <span style="color: var(--danger);">*</span></label>
+            <select id="subject_id" name="subject_id" class="form-select" required>
+              <option value="">-- Choose Subject --</option>
+              {% for sub in subjects %}
+              <option value="{{ sub.id }}">{{ sub.name }} ({{ sub.code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="exam_name">Exam Name <span style="color: var(--danger);">*</span></label>
+            <select id="exam_name" name="exam_name" class="form-select" required>
+              <option value="Midterm Exam">Midterm Exam</option>
+              <option value="Final Exam">Final Exam</option>
+              <option value="Unit Test 1">Unit Test 1</option>
+              <option value="Unit Test 2">Unit Test 2</option>
+              <option value="Practical Exam">Practical Exam</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="semester">Semester <span style="color: var(--danger);">*</span></label>
+            <select id="semester" name="semester" class="form-select" required>
+              {% for i in range(1, 9) %}
+              <option value="{{ i }}">Semester {{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="max_marks">Maximum Marks <span style="color: var(--danger);">*</span></label>
+            <input type="number" step="0.5" id="max_marks" name="max_marks" class="form-control" value="100" required>
+          </div>
+
+          <div class="form-group">
+            <label for="marks_obtained">Marks Obtained <span style="color: var(--danger);">*</span></label>
+            <input type="number" step="0.5" id="marks_obtained" name="marks_obtained" class="form-control" placeholder="e.g. 85.5" required>
+          </div>
+
+          <div class="form-group">
+            <label for="exam_date">Exam Date</label>
+            <input type="date" id="exam_date" name="exam_date" class="form-control" value="{{ today_date_iso if today_date_iso else '2026-08-16' }}">
+          </div>
+
+          <div class="form-group">
+            <label for="remarks">Remarks (Optional)</label>
+            <input type="text" id="remarks" name="remarks" class="form-control" placeholder="e.g. Good grasp of concepts">
+          </div>
+
+        </div>
+
+        <!-- REAL-TIME CALCULATION PREVIEW BOX -->
+        <div style="background-color: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; margin: 1.5rem 0; display: flex; justify-content: space-around; text-align: center;">
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Computed Percentage</span>
+            <div id="calcPct" style="font-size: 1.35rem; font-weight: 800; color: var(--primary);">0.0%</div>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Calculated Grade</span>
+            <div id="calcGrade" style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">-</div>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Pass / Fail Result</span>
+            <div id="calcStatus" style="font-size: 1.35rem; font-weight: 800; color: var(--text-muted);">-</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <a href="{{ url_for('marks.index') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.75rem;">
+            <i class="bi bi-check2-circle"></i> Save Marks
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const maxInput = document.getElementById('max_marks');
+  const obtInput = document.getElementById('marks_obtained');
+  const pctEl = document.getElementById('calcPct');
+  const gradeEl = document.getElementById('calcGrade');
+  const statusEl = document.getElementById('calcStatus');
+
+  function updateGrade() {
+    const max = parseFloat(maxInput.value) || 0;
+    const obt = parseFloat(obtInput.value) || 0;
+
+    if (max > 0 && obt >= 0) {
+      const pct = Math.min(100, Math.round((obt / max) * 1000) / 10);
+      pctEl.textContent = `${pct}%`;
+
+      let grade = 'F';
+      let status = 'Fail';
+      let color = 'var(--danger-text)';
+
+      if (pct >= 90) { grade = 'A+'; status = 'Pass'; color = 'var(--success-text)'; }
+      else if (pct >= 80) { grade = 'A'; status = 'Pass'; color = 'var(--success-text)'; }
+      else if (pct >= 70) { grade = 'B'; status = 'Pass'; color = 'var(--primary)'; }
+      else if (pct >= 60) { grade = 'C'; status = 'Pass'; color = 'var(--warning-text)'; }
+      else if (pct >= 40) { grade = 'D'; status = 'Pass'; color = 'var(--warning-text)'; }
+
+      gradeEl.textContent = grade;
+      gradeEl.style.color = color;
+      statusEl.textContent = status;
+      statusEl.style.color = color;
+    } else {
+      pctEl.textContent = '0.0%';
+      gradeEl.textContent = '-';
+      statusEl.textContent = '-';
+    }
+  }
+
+  maxInput.addEventListener('input', updateGrade);
+  obtInput.addEventListener('input', updateGrade);
+});
+</script>
+{% endblock %}

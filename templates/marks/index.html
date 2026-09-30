@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Marks & Grading{% endblock %}
+{% block page_heading %}Marks & Examination Management{% endblock %}
+{% block page_subheading %}Record, calculate grades, and generate student academic marksheets{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<form method="GET" action="{{ url_for('marks.index') }}" class="filter-bar">
+  <div class="search-input-group">
+    <i class="bi bi-search"></i>
+    <input type="text" name="search" class="form-control" placeholder="Search by student name or roll number..." value="{{ search }}">
+  </div>
+
+  <div style="min-width: 160px;">
+    <select name="exam_name" class="form-select">
+      <option value="">All Exams</option>
+      {% for e in exams %}
+      <option value="{{ e }}" {% if selected_exam == e %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 180px;">
+    <select name="subject_id" class="form-select">
+      <option value="">All Subjects</option>
+      {% for s in subjects %}
+      <option value="{{ s.id }}" {% if selected_subject == s.id %}selected{% endif %}>{{ s.name }} ({{ s.code }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 120px;">
+    <select name="semester" class="form-select">
+      <option value="">All Semesters</option>
+      {% for i in range(1, 9) %}
+      <option value="{{ i }}" {% if selected_sem == i %}selected{% endif %}>Semester {{ i }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 110px;">
+    <select name="status" class="form-select">
+      <option value="">All Results</option>
+      <option value="Pass" {% if selected_status == 'Pass' %}selected{% endif %}>Pass</option>
+      <option value="Fail" {% if selected_status == 'Fail' %}selected{% endif %}>Fail</option>
+    </select>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem;">
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-funnel-fill"></i> Filter
+    </button>
+    <a href="{{ url_for('marks.index') }}" class="btn btn-secondary btn-sm" title="Reset">
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </a>
+  </div>
+
+  <div style="margin-left: auto;">
+    <a href="{{ url_for('marks.add') }}" class="btn btn-success">
+      <i class="bi bi-pencil-square"></i> Enter New Marks
+    </a>
+  </div>
+</form>
+
+<!-- SUMMARY KPI ROW -->
+<div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.5rem;">
+  <div class="kpi-card blue" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Total Entries</h4>
+      <div class="kpi-value" style="font-size: 1.5rem;">{{ total_entries }}</div>
+    </div>
+  </div>
+  <div class="kpi-card green" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Passed Entries</h4>
+      <div class="kpi-value" style="font-size: 1.5rem; color: var(--success-text);">{{ passed_entries }}</div>
+    </div>
+  </div>
+  <div class="kpi-card rose" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Failed Entries</h4>
+      <div class="kpi-value" style="font-size: 1.5rem; color: var(--danger-text);">{{ failed_entries }}</div>
+    </div>
+  </div>
+  <div class="kpi-card purple" style="padding: 1rem 1.25rem;">
+    <div class="kpi-info">
+      <h4>Pass Rate</h4>
+      <div class="kpi-value" style="font-size: 1.5rem;">{{ pass_pct }}%</div>
+    </div>
+  </div>
+</div>
+
+<!-- MARKS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="bi bi-award"></i> Student Exam Scores</h3>
+    <a href="{{ url_for('reports.marks_report') }}" class="btn btn-secondary btn-sm">
+      <i class="bi bi-printer"></i> Academic Report
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Exam</th>
+          <th>Subject</th>
+          <th>Semester</th>
+          <th>Max Marks</th>
+          <th>Obtained</th>
+          <th>Percentage</th>
+          <th>Grade</th>
+          <th>Result</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in records %}
+        <tr>
+          <td>
+            <div class="student-cell">
+              <img src="{{ url_for('static', filename='uploads/avatars/' + m.student.photo_filename) }}" 
+                   onerror="this.src='{{ url_for('static', filename='uploads/avatars/default-avatar.svg') }}'" 
+                   class="avatar-img" alt="{{ m.student.full_name }}">
+              <div class="student-name-sub">
+                <a href="{{ url_for('students.view_profile', id=m.student.id) }}" style="text-decoration: none; color: inherit;">
+                  <strong>{{ m.student.full_name }}</strong>
+                </a>
+                <span>{{ m.student.student_id }}</span>
+              </div>
+            </div>
+          </td>
+          <td><strong>{{ m.exam_name }}</strong></td>
+          <td>
+            {{ m.subject.name }}
+            <div style="font-size: 0.72rem; color: var(--text-muted);">{{ m.subject.code }}</div>
+          </td>
+          <td>Sem {{ m.semester }}</td>
+          <td>{{ m.max_marks|int }}</td>
+          <td><strong style="font-size: 0.95rem;">{{ m.marks_obtained }}</strong></td>
+          <td>{{ m.percentage }}%</td>
+          <td>
+            <span class="badge grade-{{ m.grade[0].lower() }}">{{ m.grade }}</span>
+          </td>
+          <td>
+            <span class="badge {{ m.status.lower() }}">{{ m.status }}</span>
+          </td>
+          <td style="text-align: right;">
+            <div style="display: inline-flex; gap: 0.35rem;">
+              <a href="{{ url_for('marks.marksheet', student_id=m.student.id, semester=m.semester) }}" class="btn btn-secondary btn-icon" title="View Student Mark Sheet">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+              </a>
+              <a href="{{ url_for('marks.edit', id=m.id) }}" class="btn btn-secondary btn-icon" title="Edit Marks">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <form id="del-mark-{{ m.id }}" action="{{ url_for('marks.delete', id=m.id) }}" method="POST" style="display: inline;">
+                <button type="button" class="btn btn-danger btn-icon" title="Delete" onclick="confirmDelete('del-mark-{{ m.id }}', 'marks record for {{ m.student.full_name }}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+            <i class="bi bi-award" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+            No marks records found for the selected query.
+            <div style="margin-top: 0.75rem;">
+              <a href="{{ url_for('marks.add') }}" class="btn btn-primary btn-sm">Enter Marks</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
